@@ -10,8 +10,6 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
-import android.view.animation.AccelerateDecelerateInterpolator
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -25,6 +23,7 @@ import com.luncher.ui.FloatingWindowService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class LauncherActivity : AppCompatActivity() {
     private lateinit var b: ActivityLauncherBinding
@@ -174,9 +173,12 @@ class LauncherActivity : AppCompatActivity() {
             permissionGranted()
     }
 
-    override fun onRequestPermissionsResult(c: Int, p: Array<out String>, g: IntArray) {
-        super.onRequestPermissionsResult(c, p, g)
-        if (g.isNotEmpty() && g.all { it == PackageManager.PERMISSION_GRANTED }) permissionGranted()
+    override fun onRequestPermissionsResult(
+        requestCode: Int, permissions: Array<out String>, grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (grantResults.isNotEmpty() && grantResults.all { it == PackageManager.PERMISSION_GRANTED })
+            permissionGranted()
     }
 
     override fun onResume() {
@@ -187,14 +189,20 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    private fun permissionGranted() { currentPermissionIndex++; requestNextPermission() }
-
-    private fun isNotificationListenerEnabled(): Boolean {
-        val e = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_NOTIFICATION_LISTENERS)
-        return e != null && e.contains("$packageName/.data.NotificationListener")
+    private fun permissionGranted() {
+        currentPermissionIndex++
+        requestNextPermission()
     }
 
-    private fun startFloatingWindowService() { startService(Intent(this, FloatingWindowService::class.java)) }
+    private fun isNotificationListenerEnabled(): Boolean {
+        val enabledListeners = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_NOTIFICATION_LISTENERS)
+        val myListener = "$packageName/.data.NotificationListener"
+        return enabledListeners != null && enabledListeners.contains(myListener)
+    }
+
+    private fun startFloatingWindowService() {
+        startService(Intent(this, FloatingWindowService::class.java))
+    }
 
     private fun setupRV() {
         a = AppAdapter { appInfo ->
@@ -213,7 +221,9 @@ class LauncherActivity : AppCompatActivity() {
     private fun setupSearch() {
         b.searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(c: CharSequence?, s: Int, cnt: Int, a: Int) = Unit
-            override fun onTextChanged(c: CharSequence?, s: Int, b: Int, aft: Int) = a.filter(c?.toString() ?: "")
+            override fun onTextChanged(c: CharSequence?, s: Int, b: Int, aft: Int) {
+                a.filter(c?.toString() ?: "")
+            }
             override fun afterTextChanged(e: Editable?) = Unit
         })
     }
@@ -231,8 +241,15 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun queryApps(): List<AppInfo> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        return packageManager.queryIntentActivities(intent, 0)
+        val resolveInfos = packageManager.queryIntentActivities(intent, 0)
+        return resolveInfos
             .sortedBy { it.loadLabel(packageManager).toString() }
-            .map { AppInfo(it.loadLabel(packageManager).toString(), it.activityInfo.packageName, it.loadIcon(packageManager)) }
+            .map {
+                AppInfo(
+                    name = it.loadLabel(packageManager).toString(),
+                    packageName = it.activityInfo.packageName,
+                    icon = it.loadIcon(packageManager)
+                )
+            }
     }
 }
