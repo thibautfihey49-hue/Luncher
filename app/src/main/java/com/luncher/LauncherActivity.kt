@@ -27,6 +27,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.luncher.data.AppInfo
 import com.luncher.databinding.ActivityLauncherBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -125,6 +126,7 @@ class LauncherActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             permissionsNeeded.add(Manifest.permission.READ_SMS)
             permissionsNeeded.add(Manifest.permission.RECEIVE_SMS)
+            permissionsNeeded.add(Manifest.permission.SEND_SMS)
         }
         
         if (permissionsNeeded.isNotEmpty()) {
@@ -199,8 +201,6 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun removeNotification(id: String) {
-        val listener = NotificationListener::class.java
-        val instance = NotificationListener::class
         NotificationListener.messagesFlow.value = NotificationListener.messagesFlow.value.filter { it.id != id }
     }
 
@@ -338,7 +338,7 @@ class LauncherActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) = Unit
             override fun onTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) {
                 val q = s?.toString() ?: ""
-                adapter.filter.filter(q)
+                adapter.filter(q)
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })

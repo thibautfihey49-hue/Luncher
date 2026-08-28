@@ -11,6 +11,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
+import android.widget.Toast
 import androidx.recyclerview.widget.RecyclerView
 
 class NotificationAdapter(
@@ -88,9 +89,9 @@ class NotificationAdapter(
         try {
             val smsManager = SmsManager.getDefault()
             smsManager.sendTextMessage(number, null, message, null, null)
-            android.widget.Toast.makeText(context, "✅ SMS envoyé !", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "✅ SMS envoyé !", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            android.widget.Toast.makeText(context, "❌ Erreur : ${e.message}", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "❌ Erreur : ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -102,7 +103,7 @@ class NotificationAdapter(
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         } catch (e: Exception) {
-            android.widget.Toast.makeText(context, "❌ WhatsApp non disponible", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "❌ WhatsApp non disponible", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -112,7 +113,7 @@ class NotificationAdapter(
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             context.startActivity(intent)
         } catch (e: Exception) {
-            android.widget.Toast.makeText(context, "❌ Gmail non disponible", android.widget.Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "❌ Gmail non disponible", Toast.LENGTH_SHORT).show()
         }
     }
 }
