@@ -45,7 +45,6 @@ class LauncherActivity : AppCompatActivity() {
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
     private val KEY_TEXT_COLOR = "text_color"
 
-    // 🎨 Couleurs disponibles pour le texte
     private val colorNames = listOf(
         "⚫ Noir", "⚪ Blanc", "🔴 Rouge", "🟡 Jaune", "🟠 Or",
         "🔵 Cyan", "🟢 Vert", "🟣 Violet", "🟠 Orange", "💗 Rose", "🔵 Bleu"
@@ -99,32 +98,23 @@ class LauncherActivity : AppCompatActivity() {
         loadAllApps()
     }
 
-    // ✅ APPUIS LONGS : fond sur l'accueil, couleur sur l'heure
     private fun setupLongPressActions() {
-        // Appui long sur l'espace vide → changer fond d'écran
         b.root.setOnLongClickListener {
-            if (b.heureTexte.isPressed || b.dateTexte.isPressed) {
-                // L'appui est sur l'heure ou la date → ne rien faire ici
-            } else {
-                changerFondEcran()
-            }
+            changerFondEcran()
             true
         }
 
-        // Appui long sur l'heure → changer couleur du texte
         b.heureTexte.setOnLongClickListener {
             showColorPickerDialog()
             true
         }
 
-        // Appui long sur la date → changer couleur du texte
         b.dateTexte.setOnLongClickListener {
             showColorPickerDialog()
             true
         }
     }
 
-    // 🎨 CHOISIR LA COULEUR DU TEXTE
     private fun showColorPickerDialog() {
         val currentColor = prefs.getInt(KEY_TEXT_COLOR, Color.BLACK)
         val selectedIndex = colorValues.indexOf(currentColor).coerceAtLeast(0)
@@ -191,7 +181,6 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ FOND PLEIN ÉCRAN, SANS DÉFORMATION
     private fun setWallpaperFromUri(uri: Uri) {
         try {
             val inputStream = contentResolver.openInputStream(uri)
