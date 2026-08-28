@@ -374,27 +374,20 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ CORRIGÉ : Récupère TOUTES les applications, pas seulement celles avec un launcher
+    // ✅ AFFICHE TOUTES LES APPLICATIONS — SANS AUCUN FILTRE !
     private fun loadAllApps() {
         CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            // Récupère TOUTES les applications installées
+            // Récupère TOUTES les applications installées — AUCUN FILTRE
             val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             
-            for (appInfo: ApplicationInfo in packages) {
+            for (appInfo in packages) {
                 try {
-                    // Exclut les applications système cachées si on veut, mais inclut tout le reste
-                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-                    
-                    // Inclut : toutes les apps utilisateur + les apps système MISES À JOUR
-                    if (!isSystemApp || isUpdatedSystemApp) {
-                        val name = appInfo.loadLabel(pm).toString()
-                        if (name.isNotEmpty() && !name.startsWith(".")) {
-                            apps.add(AppInfo(name, appInfo.packageName, appInfo.loadIcon(pm)))
-                        }
+                    val name = appInfo.loadLabel(pm).toString()
+                    if (name.isNotEmpty() && !name.startsWith(".")) {
+                        apps.add(AppInfo(name, appInfo.packageName, appInfo.loadIcon(pm)))
                     }
                 } catch (e: Exception) {
                     // Ignore les applications qu'on ne peut pas charger
