@@ -1,5 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="purple_500">#6366F1</color>
-    <color name="white">#FFFFFF</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="red">#FFFF0000</color>
+    <color name="yellow">#FFFFFF00</color>
+    <color name="gold">#FFFFD700</color>
+    <color name="cyan">#FF00FFFF</color>
+    <color name="green">#FF00FF00</color>
+    <color name="purple">#FF9C27B0</color>
+    <color name="orange">#FFFF9800</color>
+    <color name="pink">#FFFF4081</color>
+    <color name="blue">#FF2196F3</color>
 </resources>

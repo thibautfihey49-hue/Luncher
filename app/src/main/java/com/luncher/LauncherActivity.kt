@@ -1,10 +1,14 @@
 package com.luncher
 
 import android.Manifest
+import android.app.AlertDialog
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.drawable.BitmapDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -31,6 +35,7 @@ import java.util.*
 class LauncherActivity : AppCompatActivity() {
     private lateinit var b: ActivityLauncherBinding
     private lateinit var adapter: AppAdapter
+    private lateinit var prefs: SharedPreferences
     private var isDrawerOpen = false
     private var allApps = listOf<AppInfo>()
     private val handler = Handler(Looper.getMainLooper())
@@ -38,14 +43,24 @@ class LauncherActivity : AppCompatActivity() {
 
     private val PREFS_NAME = "LuncherPrefs"
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
+    private val KEY_TEXT_COLOR = "text_color"
 
-    // 📌 Ouvrir galerie
+    // 🎨 Couleurs disponibles pour le texte
+    private val colorNames = listOf(
+        "⚫ Noir", "⚪ Blanc", "🔴 Rouge", "🟡 Jaune", "🟠 Or",
+        "🔵 Cyan", "🟢 Vert", "🟣 Violet", "🟠 Orange", "💗 Rose", "🔵 Bleu"
+    )
+    private val colorValues = listOf(
+        Color.BLACK, Color.WHITE, Color.RED, Color.YELLOW, Color.parseColor("#FFD700"),
+        Color.CYAN, Color.GREEN, Color.parseColor("#9C27B0"), Color.parseColor("#FF9800"),
+        Color.parseColor("#FF4081"), Color.parseColor("#2196F3")
+    )
+
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
             result.data?.data?.let { uri ->
-                // ✅ SIMPLIFIÉ : PAS de takePersistableUriPermission qui plante !
                 saveWallpaperUri(uri)
                 setWallpaperFromUri(uri)
                 Toast.makeText(this, "✅ Fond d'écran changé !", Toast.LENGTH_SHORT).show()
@@ -59,7 +74,7 @@ class LauncherActivity : AppCompatActivity() {
         if (isGranted) {
             openGallery()
         } else {
-            Toast.makeText(this, "❌ Permission nécessaire pour accéder à vos images", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "❌ Permission nécessaire", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -67,6 +82,8 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(b.root)
+
+        prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
         setupRecycler()
         setupSearch()
@@ -76,16 +93,63 @@ class LauncherActivity : AppCompatActivity() {
         b.toggleBtn.rotation = 0f
 
         setupDateTime()
-        setupLongPressWallpaper()
+        setupLongPressActions()
         loadSavedWallpaper()
+        loadTextColor()
         loadAllApps()
     }
 
-    private fun setupLongPressWallpaper() {
+    // ✅ APPUIS LONGS : fond sur l'accueil, couleur sur l'heure
+    private fun setupLongPressActions() {
+        // Appui long sur l'espace vide → changer fond d'écran
         b.root.setOnLongClickListener {
-            changerFondEcran()
+            if (b.heureTexte.isPressed || b.dateTexte.isPressed) {
+                // L'appui est sur l'heure ou la date → ne rien faire ici
+            } else {
+                changerFondEcran()
+            }
             true
         }
+
+        // Appui long sur l'heure → changer couleur du texte
+        b.heureTexte.setOnLongClickListener {
+            showColorPickerDialog()
+            true
+        }
+
+        // Appui long sur la date → changer couleur du texte
+        b.dateTexte.setOnLongClickListener {
+            showColorPickerDialog()
+            true
+        }
+    }
+
+    // 🎨 CHOISIR LA COULEUR DU TEXTE
+    private fun showColorPickerDialog() {
+        val currentColor = prefs.getInt(KEY_TEXT_COLOR, Color.BLACK)
+        val selectedIndex = colorValues.indexOf(currentColor).coerceAtLeast(0)
+
+        AlertDialog.Builder(this)
+            .setTitle("🎨 Couleur du texte")
+            .setSingleChoiceItems(colorNames.toTypedArray(), selectedIndex) { dialog, which ->
+                val newColor = colorValues[which]
+                setTextColor(newColor)
+                prefs.edit { putInt(KEY_TEXT_COLOR, newColor) }
+                dialog.dismiss()
+                Toast.makeText(this, "✅ Couleur changée !", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Annuler", null)
+            .show()
+    }
+
+    private fun setTextColor(color: Int) {
+        b.heureTexte.setTextColor(color)
+        b.dateTexte.setTextColor(color)
+    }
+
+    private fun loadTextColor() {
+        val savedColor = prefs.getInt(KEY_TEXT_COLOR, Color.BLACK)
+        setTextColor(savedColor)
     }
 
     private fun changerFondEcran() {
@@ -111,15 +175,11 @@ class LauncherActivity : AppCompatActivity() {
         pickImageLauncher.launch(Intent.createChooser(intent, "Choisir une image"))
     }
 
-    // ✅ SIMPLIFIÉ : on sauvegarde juste l'URI, PAS de permission persistante
     private fun saveWallpaperUri(uri: Uri) {
-        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
-            putString(KEY_WALLPAPER_URI, uri.toString())
-        }
+        prefs.edit { putString(KEY_WALLPAPER_URI, uri.toString()) }
     }
 
     private fun loadSavedWallpaper() {
-        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         val uriString = prefs.getString(KEY_WALLPAPER_URI, null)
         uriString?.let { uriStr ->
             try {
@@ -131,13 +191,17 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    // ✅ FOND PLEIN ÉCRAN, SANS DÉFORMATION
     private fun setWallpaperFromUri(uri: Uri) {
         try {
             val inputStream = contentResolver.openInputStream(uri)
             val bitmap = BitmapFactory.decodeStream(inputStream)
-            b.root.background = android.graphics.drawable.BitmapDrawable(resources, bitmap)
+            val drawable = BitmapDrawable(resources, bitmap)
+            drawable.setTileModeXY(android.graphics.drawable.Shader.TileMode.CLAMP, android.graphics.drawable.Shader.TileMode.CLAMP)
+            drawable.gravity = android.view.Gravity.FILL
+            b.root.background = drawable
         } catch (e: Exception) {
-            Toast.makeText(this, "⚠️ Image trop grande ou illisible", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "⚠️ Impossible de charger l'image", Toast.LENGTH_SHORT).show()
         }
     }
 

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F5F7FA"
+    android:background="@android:color/transparent"
     android:orientation="vertical"
     android:id="@+id/root_layout">
 
+    <!-- 🕐 HEURE ET DATE — Centré, grand -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -18,7 +20,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="00:00"
-            android:textSize="72sp"
+            android:textSize="80sp"
             android:textStyle="bold"
             android:textColor="#FF000000"/>
 
@@ -27,26 +29,27 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Lundi 1 Janvier"
-            android:textSize="18sp"
+            android:textSize="20sp"
             android:textColor="#FF000000"
-            android:layout_marginTop="4dp"/>
+            android:layout_marginTop="8dp"/>
         
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="📌 Appui long pour changer le fond d'écran"
+            android:text="📌 Appui long sur l'heure pour changer la couleur"
             android:textSize="12sp"
             android:textColor="#80000000"
-            android:layout_marginTop="16dp"/>
+            android:layout_marginTop="20dp"/>
     </LinearLayout>
 
+    <!-- 🔽 Bouton Ouvrir/Fermer le tiroir -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingVertical="16dp"
-        android:background="#FFFFFF"
-        android:elevation="2dp">
+        android:paddingVertical="12dp"
+        android:background="#80FFFFFF"
+        android:elevation="0dp">
 
         <ImageView
             android:id="@+id/toggle_btn"
@@ -58,12 +61,13 @@
             android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
 
+    <!-- 📦 TIROIR DES APPLICATIONS — FOND TRANSPARENT ! -->
     <LinearLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="2"
-        android:background="#FFFFFF"
+        android:background="#CCFFFFFF"
         android:orientation="vertical"
         android:visibility="gone">
 
