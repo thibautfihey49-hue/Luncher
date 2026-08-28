@@ -101,9 +101,9 @@
             android:maxLines="3"
             android:background="#FFFFFF15"
             android:textColor="#FFFFFF"
+            android:textColorHint="#80FFFFFF"
             android:textCursorDrawable="@null"
-            android:padding="12dp"
-            android:hintTextColor="#80FFFFFF"/>
+            android:padding="12dp"/>
 
         <Button
             android:id="@+id/btn_send_reply"
