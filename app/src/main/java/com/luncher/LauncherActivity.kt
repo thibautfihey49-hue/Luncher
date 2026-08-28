@@ -1,8 +1,6 @@
 package com.luncher
 
 import android.content.Intent
-import android.content.pm.ApplicationInfo
-import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -30,7 +28,7 @@ class LauncherActivity : AppCompatActivity() {
         setupRecycler()
         setupSearch()
         setupDrawerToggle()
-        loadAllApplications()
+        loadApps()
 
         b.drawerLayout.visibility = View.GONE
         b.toggleBtn.rotation = 0f
@@ -88,10 +86,10 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    private fun loadAllApplications() {
+    private fun loadApps() {
         b.progress.visibility = View.VISIBLE
         CoroutineScope(Dispatchers.IO).launch {
-            allApps = getAllAppsNoExclusion()
+            allApps = getAppsOfficialMethod()
             withContext(Dispatchers.Main) {
                 adapter.updateListe(allApps)
                 b.progress.visibility = View.GONE
@@ -99,25 +97,26 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ SANS AUCUNE EXCLUSION — TOUT EST RÉCUPÉRÉ
-    private fun getAllAppsNoExclusion(): List<AppInfo> {
+    // ✅ LA MÉTHODE OFFICIELLE — COMME TOUS LES LANCEURS
+    private fun getAppsOfficialMethod(): List<AppInfo> {
         val pm = packageManager
+        val intent = Intent(Intent.ACTION_MAIN, null)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
+        
+        // ✅ CECI EST LA SEULE BONNE MÉTHODE
+        val resolveInfos = pm.queryIntentActivities(intent, 0)
+        
         val result = mutableListOf<AppInfo>()
         
-        // Récupère TOUTES les applications, SANS FILTRE
-        val packages = pm.getInstalledApplications(0)
-        
-        for (app in packages) {
+        for (resolveInfo in resolveInfos) {
             try {
-                // Récupère l'intention de lancement
-                val launchIntent = pm.getLaunchIntentForPackage(app.packageName)
-                if (launchIntent != null) {
-                    val name = app.loadLabel(pm).toString()
-                    val icon = app.loadIcon(pm)
-                    result.add(AppInfo(name, app.packageName, icon))
-                }
+                val nom = resolveInfo.loadLabel(pm).toString()
+                val paquet = resolveInfo.activityInfo.packageName
+                val icone = resolveInfo.loadIcon(pm)
+                
+                result.add(AppInfo(nom, paquet, icone))
             } catch (e: Exception) {
-                // Ignore les erreurs silencieusement
+                // Ignorer
             }
         }
         
