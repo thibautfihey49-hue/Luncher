@@ -91,7 +91,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun loadAllApplications() {
         b.progress.visibility = View.VISIBLE
         CoroutineScope(Dispatchers.IO).launch {
-            allApps = getAllApps()
+            allApps = getAllAppsNoExclusion()
             withContext(Dispatchers.Main) {
                 adapter.updateListe(allApps)
                 b.progress.visibility = View.GONE
@@ -99,34 +99,29 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ MÉTHODE LA PLUS COMPLÈTE POSSIBLE
-    private fun getAllApps(): List<AppInfo> {
+    // ✅ SANS AUCUNE EXCLUSION — TOUT EST RÉCUPÉRÉ
+    private fun getAllAppsNoExclusion(): List<AppInfo> {
         val pm = packageManager
         val result = mutableListOf<AppInfo>()
         
-        // Récupère TOUTES les applications installées
+        // Récupère TOUTES les applications, SANS FILTRE
         val packages = pm.getInstalledApplications(0)
         
         for (app in packages) {
             try {
-                // Exclut uniquement les apps du système sans icône
-                val isSystemApp = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                val isUpdatedSystemApp = (app.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
-                
-                // Inclut TOUTES les apps utilisateur + les apps système mises à jour
-                if (!isSystemApp || isUpdatedSystemApp) {
-                    val intent = pm.getLaunchIntentForPackage(app.packageName)
-                    if (intent != null) {
-                        val name = app.loadLabel(pm).toString()
-                        val icon = app.loadIcon(pm)
-                        result.add(AppInfo(name, app.packageName, icon))
-                    }
+                // Récupère l'intention de lancement
+                val launchIntent = pm.getLaunchIntentForPackage(app.packageName)
+                if (launchIntent != null) {
+                    val name = app.loadLabel(pm).toString()
+                    val icon = app.loadIcon(pm)
+                    result.add(AppInfo(name, app.packageName, icon))
                 }
             } catch (e: Exception) {
-                // Ignore
+                // Ignore les erreurs silencieusement
             }
         }
         
+        // Tri alphabétique
         return result.sortedBy { it.name.lowercase() }
     }
 }
