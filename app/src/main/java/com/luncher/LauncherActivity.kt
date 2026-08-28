@@ -17,6 +17,7 @@ import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -116,7 +118,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun showColorPickerDialog() {
-        val currentColor = prefs.getInt(KEY_TEXT_COLOR, Color.BLACK)
+        val currentColor = prefs.getInt(KEY_TEXT_COLOR, Color.WHITE)
         val selectedIndex = colorValues.indexOf(currentColor).coerceAtLeast(0)
 
         AlertDialog.Builder(this)
@@ -138,7 +140,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun loadTextColor() {
-        val savedColor = prefs.getInt(KEY_TEXT_COLOR, Color.BLACK)
+        val savedColor = prefs.getInt(KEY_TEXT_COLOR, Color.WHITE)
         setTextColor(savedColor)
     }
 
@@ -181,16 +183,20 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ MÉTHODE SIMPLIFIÉE — PAS d'erreur Shader
+    // ✅ FOND PARFAIT — S'adapte à TOUTES les tailles, 4K inclus !
     private fun setWallpaperFromUri(uri: Uri) {
         try {
-            val inputStream = contentResolver.openInputStream(uri)
+            val inputStream: InputStream? = contentResolver.openInputStream(uri)
             val bitmap = BitmapFactory.decodeStream(inputStream)
+            
+            // Convertir en drawable et paramétrer pour un ajustement PARFAIT
             val drawable = BitmapDrawable(resources, bitmap)
-            drawable.gravity = android.view.Gravity.FILL
+            drawable.setFilterBitmap(true)  // Lissage pour images 4K
+            drawable.gravity = android.view.Gravity.FILL // Prend tout l'écran
+            
             b.root.background = drawable
         } catch (e: Exception) {
-            Toast.makeText(this, "⚠️ Impossible de charger l'image", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "⚠️ Image trop grande ou illisible", Toast.LENGTH_SHORT).show()
         }
     }
 

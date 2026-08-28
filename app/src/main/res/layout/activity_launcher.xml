@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:id="@+id/root_layout">
 
+    <!-- 🕐 HEURE ET DATE — Centré, sans texte en dessous -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -20,7 +21,7 @@
             android:text="00:00"
             android:textSize="80sp"
             android:textStyle="bold"
-            android:textColor="#FF000000"/>
+            android:textColor="#FFFFFFFF"/>
 
         <TextView
             android:id="@+id/date_texte"
@@ -28,18 +29,11 @@
             android:layout_height="wrap_content"
             android:text="Lundi 1 Janvier"
             android:textSize="20sp"
-            android:textColor="#FF000000"
+            android:textColor="#FFFFFFFF"
             android:layout_marginTop="8dp"/>
-        
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="📌 Appui long sur l'heure pour changer la couleur"
-            android:textSize="12sp"
-            android:textColor="#80000000"
-            android:layout_marginTop="20dp"/>
     </LinearLayout>
 
+    <!-- 🔽 Bouton Ouvrir/Fermer le tiroir -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -58,6 +52,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
 
+    <!-- 📦 TIROIR DES APPLICATIONS — Fond semi-transparent -->
     <LinearLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
