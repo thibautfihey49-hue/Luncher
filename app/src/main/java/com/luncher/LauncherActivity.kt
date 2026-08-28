@@ -4,6 +4,8 @@ import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
@@ -15,12 +17,16 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
+import java.util.*
 
 class LauncherActivity : AppCompatActivity() {
     private lateinit var b: ActivityLauncherBinding
     private lateinit var adapter: AppAdapter
     private var isDrawerOpen = false
     private var allApps = listOf<AppInfo>()
+    private val handler = Handler(Looper.getMainLooper())
+    private lateinit var timeRunnable: Runnable
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -34,7 +40,31 @@ class LauncherActivity : AppCompatActivity() {
         b.drawerLayout.visibility = View.GONE
         b.toggleBtn.rotation = 0f
 
+        setupDateTime()
         loadAllApps()
+    }
+
+    // ✅ MISE À JOUR HEURE ET DATE EN TEMPS RÉEL
+    private fun setupDateTime() {
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.FRANCE)
+        val dateFormat = SimpleDateFormat("EEEE d MMMM", Locale.FRANCE)
+
+        fun update() {
+            val maintenant = Calendar.getInstance()
+            b.heureTexte.text = timeFormat.format(maintenant.time)
+            b.dateTexte.text = dateFormat.format(maintenant.time).replaceFirstChar { it.uppercase() }
+        }
+
+        update() // Première mise à jour immédiate
+        
+        // Mise à jour chaque minute
+        timeRunnable = object : Runnable {
+            override fun run() {
+                update()
+                handler.postDelayed(this, 60000) // 60 secondes
+            }
+        }
+        handler.post(timeRunnable)
     }
 
     private fun setupRecycler() {
@@ -87,7 +117,6 @@ class LauncherActivity : AppCompatActivity() {
         val uniquePackages = mutableSetOf<String>()
         val result = mutableListOf<AppInfo>()
         
-        // Méthode 1 : Apps du lanceur
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val launcherApps = pm.queryIntentActivities(intent, 0)
         for (resolveInfo in launcherApps) {
@@ -101,7 +130,6 @@ class LauncherActivity : AppCompatActivity() {
             } catch (e: Exception) {}
         }
         
-        // Méthode 2 : Toutes les apps installées
         val installed = pm.getInstalledApplications(0)
         for (appInfo in installed) {
             try {
@@ -116,5 +144,10 @@ class LauncherActivity : AppCompatActivity() {
         }
         
         return result.sortedBy { it.name.lowercase() }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        handler.removeCallbacks(timeRunnable)
     }
 }
