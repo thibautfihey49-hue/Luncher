@@ -45,7 +45,6 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(s)
         b = ActivityLauncherBinding.inflate(layoutInflater)
         setContentView(b.root)
-
         setupDrawer()
         setupRV()
         setupSearch()
@@ -56,16 +55,11 @@ class LauncherActivity : AppCompatActivity() {
         val displayMetrics = resources.displayMetrics
         val screenHeight = displayMetrics.heightPixels
         drawerMaxHeight = (screenHeight * 0.85).toInt()
-
         b.toggleDrawerBtn.setOnClickListener { toggleDrawer() }
-
         var startY = 0f
         b.drawerLayout.setOnTouchListener { _, event ->
             when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startY = event.rawY
-                    false
-                }
+                MotionEvent.ACTION_DOWN -> { startY = event.rawY; false }
                 MotionEvent.ACTION_MOVE -> {
                     val delta = startY - event.rawY
                     if (delta > 50 && !isDrawerOpen) { openDrawer(); true }
@@ -78,7 +72,6 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun toggleDrawer() = if (isDrawerOpen) closeDrawer() else openDrawer()
-
     private fun openDrawer() {
         isDrawerOpen = true
         val p = b.drawerLayout.layoutParams as ConstraintLayout.LayoutParams
@@ -87,7 +80,6 @@ class LauncherActivity : AppCompatActivity() {
         b.appsRecycler.visibility = View.VISIBLE
         b.toggleDrawerBtn.setIconResource(R.drawable.ic_keyboard_arrow_down)
     }
-
     private fun closeDrawer() {
         isDrawerOpen = false
         b.appsRecycler.visibility = View.GONE
@@ -100,7 +92,6 @@ class LauncherActivity : AppCompatActivity() {
     private fun checkAndRequestPermissionsSequentially() {
         permissionsToRequest.clear()
         currentPermissionIndex = 0
-
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this))
             permissionsToRequest.add("SYSTEM_ALERT_WINDOW")
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
@@ -112,7 +103,6 @@ class LauncherActivity : AppCompatActivity() {
             permissionsToRequest.add(android.Manifest.permission.POST_NOTIFICATIONS)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1 && !isNotificationListenerEnabled())
             permissionsToRequest.add("NOTIFICATION_LISTENER")
-
         if (permissionsToRequest.isEmpty()) { startFloatingWindowService(); loadApps() }
         else showPermissionIntroDialog()
     }
