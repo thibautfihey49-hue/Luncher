@@ -74,7 +74,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun loadAllApps() {
         b.progress.visibility = View.VISIBLE
         CoroutineScope(Dispatchers.IO).launch {
-            allApps = getEverySingleApp()
+            allApps = getAllApps()
             withContext(Dispatchers.Main) {
                 adapter.setList(allApps)
                 b.progress.visibility = View.GONE
@@ -82,13 +82,12 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ LES DEUX MÉTHODES COMBINÉES + SANS DOUBLONS
-    private fun getEverySingleApp(): List<AppInfo> {
+    private fun getAllApps(): List<AppInfo> {
         val pm = packageManager
         val uniquePackages = mutableSetOf<String>()
         val result = mutableListOf<AppInfo>()
         
-        // 📌 MÉTHODE 1 : queryIntentActivities (apps du lanceur)
+        // Méthode 1 : Apps du lanceur
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
         val launcherApps = pm.queryIntentActivities(intent, 0)
         for (resolveInfo in launcherApps) {
@@ -102,7 +101,7 @@ class LauncherActivity : AppCompatActivity() {
             } catch (e: Exception) {}
         }
         
-        // 📌 MÉTHODE 2 : getInstalledApplications (TOUTES les apps)
+        // Méthode 2 : Toutes les apps installées
         val installed = pm.getInstalledApplications(0)
         for (appInfo in installed) {
             try {
@@ -116,7 +115,6 @@ class LauncherActivity : AppCompatActivity() {
             } catch (e: Exception) {}
         }
         
-        // Tri alphabétique final
         return result.sortedBy { it.name.lowercase() }
     }
 }
