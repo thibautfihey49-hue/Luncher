@@ -3,6 +3,7 @@ package com.luncher
 import android.Manifest
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -35,7 +36,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -97,7 +97,6 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_launcher)
         
-        // Initialisation des vues SANS ViewBinding
         heureTexte = findViewById(R.id.heure_texte)
         dateTexte = findViewById(R.id.date_texte)
         toggleBtn = findViewById(R.id.toggle_btn)
@@ -375,19 +374,36 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    // ✅ CORRIGÉ : Récupère TOUTES les applications, pas seulement celles avec un launcher
     private fun loadAllApps() {
         CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
-            val unique = mutableSetOf<String>()
             val apps = mutableListOf<AppInfo>()
-            val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-            pm.queryIntentActivities(intent, 0).forEach { resolve ->
-                val pkg = resolve.activityInfo.packageName
-                if (unique.add(pkg)) {
-                    apps.add(AppInfo(resolve.loadLabel(pm).toString(), pkg, resolve.loadIcon(pm)))
+            
+            // Récupère TOUTES les applications installées
+            val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            
+            for (appInfo: ApplicationInfo in packages) {
+                try {
+                    // Exclut les applications système cachées si on veut, mais inclut tout le reste
+                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                    
+                    // Inclut : toutes les apps utilisateur + les apps système MISES À JOUR
+                    if (!isSystemApp || isUpdatedSystemApp) {
+                        val name = appInfo.loadLabel(pm).toString()
+                        if (name.isNotEmpty() && !name.startsWith(".")) {
+                            apps.add(AppInfo(name, appInfo.packageName, appInfo.loadIcon(pm)))
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore les applications qu'on ne peut pas charger
                 }
             }
+            
+            // Tri par ordre alphabétique
             val sorted = apps.sortedBy { it.name.lowercase() }
+            
             withContext(Dispatchers.Main) {
                 allApps = sorted
                 adapter.setList(sorted)
