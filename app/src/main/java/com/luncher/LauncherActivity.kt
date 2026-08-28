@@ -18,6 +18,8 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var b: ActivityLauncherBinding
     private lateinit var adapter: AppAdapter
     private var isDrawerOpen = false
+    
+    // ✅ LISTE MAÎTRE — JAMAIS MODIFIÉE
     private var allApps: List<AppInfo> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -29,8 +31,8 @@ class LauncherActivity : AppCompatActivity() {
         setupSearch()
         setupDrawerToggle()
         loadApps()
-        
-        // ✅ TIROIR FERMÉ AU DÉMARRAGE
+
+        // Tiroir fermé au démarrage
         b.drawerLayout.visibility = View.GONE
         b.toggleBtn.rotation = 0f
     }
@@ -50,26 +52,27 @@ class LauncherActivity : AppCompatActivity() {
     private fun setupSearch() {
         b.searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            
+
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val query = s?.toString()?.trim() ?: ""
-                filterApps(query)
+                val recherche = s?.toString()?.trim() ?: ""
+                appliquerRecherche(recherche)
             }
-            
+
             override fun afterTextChanged(s: Editable?) = Unit
         })
     }
 
-    private fun filterApps(query: String) {
-        val filtered = if (query.isEmpty()) {
+    // ✅ RECHERCHE PRÉCISE
+    private fun appliquerRecherche(terme: String) {
+        val resultat = if (terme.isEmpty()) {
             allApps
         } else {
-            allApps.filter { 
-                it.name.contains(query, ignoreCase = true) ||
-                it.packageName.contains(query, ignoreCase = true)
+            allApps.filter { app ->
+                app.name.contains(terme, ignoreCase = true) ||
+                app.packageName.contains(terme, ignoreCase = true)
             }
         }
-        adapter.setList(filtered)
+        adapter.updateListe(resultat)
     }
 
     private fun setupDrawerToggle() {
@@ -81,8 +84,8 @@ class LauncherActivity : AppCompatActivity() {
         if (isDrawerOpen) {
             b.drawerLayout.visibility = View.VISIBLE
             b.toggleBtn.rotation = 180f
-            b.searchInput.text.clear() // ✅ Efface la recherche quand on ferme
-            filterApps("")
+            b.searchInput.text.clear() // Réinitialise la recherche
+            appliquerRecherche("")    // Réaffiche TOUTES les apps
         } else {
             b.drawerLayout.visibility = View.GONE
             b.toggleBtn.rotation = 0f
@@ -92,23 +95,25 @@ class LauncherActivity : AppCompatActivity() {
     private fun loadApps() {
         b.progress.visibility = View.VISIBLE
         CoroutineScope(Dispatchers.IO).launch {
-            allApps = queryApps()
+            allApps = queryApplications()
             withContext(Dispatchers.Main) {
-                adapter.setList(allApps)
+                adapter.updateListe(allApps)
                 b.progress.visibility = View.GONE
             }
         }
     }
 
-    private fun queryApps(): List<AppInfo> {
+    private fun queryApplications(): List<AppInfo> {
         val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val resolved = packageManager.queryIntentActivities(intent, 0)
-        return resolved.sortedBy { it.loadLabel(packageManager).toString() }.map {
-            AppInfo(
-                name = it.loadLabel(packageManager).toString(),
-                packageName = it.activityInfo.packageName,
-                icon = it.loadIcon(packageManager)
-            )
-        }
+        val resolveInfos = packageManager.queryIntentActivities(intent, 0)
+        return resolveInfos
+            .sortedBy { it.loadLabel(packageManager).toString() }
+            .map {
+                AppInfo(
+                    name = it.loadLabel(packageManager).toString(),
+                    packageName = it.activityInfo.packageName,
+                    icon = it.loadIcon(packageManager)
+                )
+            }
     }
 }

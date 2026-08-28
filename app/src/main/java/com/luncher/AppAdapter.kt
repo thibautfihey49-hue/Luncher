@@ -12,7 +12,7 @@ class AppAdapter(
     private val onAppClick: (AppInfo) -> Unit
 ) : RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
 
-    private var apps: List<AppInfo> = emptyList()
+    private var listeAffichage: List<AppInfo> = emptyList()
 
     inner class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.app_icon)
@@ -20,21 +20,23 @@ class AppAdapter(
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
-        val v = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
-        return AppViewHolder(v)
+        val vue = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_app, parent, false)
+        return AppViewHolder(vue)
     }
 
-    override fun onBindViewHolder(h: AppViewHolder, i: Int) {
-        val app = apps[i]
-        h.name.text = app.name
-        h.icon.setImageDrawable(app.icon)
-        h.itemView.setOnClickListener { onAppClick(app) }
+    override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
+        val app = listeAffichage[position]
+        holder.name.text = app.name
+        holder.icon.setImageDrawable(app.icon)
+        holder.itemView.setOnClickListener { onAppClick(app) }
     }
 
-    override fun getItemCount() = apps.size
+    override fun getItemCount(): Int = listeAffichage.size
 
-    fun setList(list: List<AppInfo>) {
-        apps = list
+    // ✅ Met à jour la liste complètement
+    fun updateListe(nouvelleListe: List<AppInfo>) {
+        listeAffichage = nouvelleListe
         notifyDataSetChanged()
     }
 }
