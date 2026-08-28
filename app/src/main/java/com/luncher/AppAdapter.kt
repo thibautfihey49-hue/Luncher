@@ -5,14 +5,21 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
 
-class AppAdapter(private val onAppClick: (AppInfo) -> Unit) :
-    RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
+class AppAdapter(
+    private val onAppClick: (AppInfo) -> Unit
+) : RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
 
-    private var allApps = listOf<AppInfo>()
-    private var filteredApps = listOf<AppInfo>()
+    private var apps: List<AppInfo> = emptyList()
+    private var allApps: List<AppInfo> = emptyList()
+
+    inner class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val icon: ImageView = view.findViewById(R.id.app_icon)
+        val name: TextView = view.findViewById(R.id.app_name)
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -21,32 +28,27 @@ class AppAdapter(private val onAppClick: (AppInfo) -> Unit) :
     }
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-        holder.bind(filteredApps[position])
+        val app = apps[position]
+        holder.name.text = app.name
+        holder.icon.setImageDrawable(app.icon)
+        holder.itemView.setOnClickListener { onAppClick(app) }
     }
 
-    override fun getItemCount(): Int = filteredApps.size
+    override fun getItemCount(): Int = apps.size
 
-    fun setApps(apps: List<AppInfo>) {
-        allApps = apps
-        filteredApps = apps
+    fun setApps(newApps: List<AppInfo>) {
+        allApps = newApps
+        apps = newApps
         notifyDataSetChanged()
     }
 
     fun filter(query: String) {
-        val q = query.lowercase()
-        filteredApps = if (q.isEmpty()) allApps
-        else allApps.filter { it.name.lowercase().contains(q) }
-        notifyDataSetChanged()
-    }
-
-    inner class AppViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val icon: ImageView = itemView.findViewById(R.id.app_icon)
-        private val name: TextView = itemView.findViewById(R.id.app_name)
-
-        fun bind(app: AppInfo) {
-            name.text = app.name
-            icon.setImageDrawable(app.icon)
-            itemView.setOnClickListener { onAppClick(app) }
+        val filtered = if (query.isEmpty()) {
+            allApps
+        } else {
+            allApps.filter { it.name.contains(query, ignoreCase = true) }
         }
+        apps = filtered
+        notifyDataSetChanged()
     }
 }

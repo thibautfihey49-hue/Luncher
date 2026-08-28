@@ -1,51 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"/>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.luncher">
+
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.READ_SMS"/>
     <uses-permission android:name="android.permission.RECEIVE_SMS"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
-    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE"/>
-    
-    <application 
-        android:allowBackup="true" 
+
+    <application
+        android:allowBackup="true"
         android:icon="@android:drawable/sym_def_app_icon"
         android:label="Luncher Pro"
-        android:roundIcon="@android:drawable/sym_def_app_icon"
-        android:supportsRtl="true" 
-        android:theme="@style/Theme.Luncher" 
-        android:hardwareAccelerated="true">
+        android:theme="@style/Theme.Material3.DayNight.NoActionBar">
         
-        <activity 
-            android:name=".LauncherActivity" 
-            android:exported="true" 
-            android:launchMode="singleInstance">
+        <activity
+            android:name=".LauncherActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.HOME"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
-        
-        <service 
-            android:name=".ui.FloatingWindowService" 
-            android:exported="false" 
-            android:foregroundServiceType="specialUse"/>
-        
-        <receiver 
-            android:name=".data.SmsReceiver" 
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.provider.Telephony.SMS_RECEIVED"/>
-            </intent-filter>
-        </receiver>
-        
-        <service 
-            android:name=".data.NotificationListener" 
-            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE" 
-            android:exported="true">
+
+        <service
+            android:name=".ui.FloatingWindowService"
+            android:exported="false"/>
+
+        <service
+            android:name=".data.NotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
             <intent-filter>
                 <action android:name="android.service.notification.NotificationListenerService"/>
             </intent-filter>
