@@ -6,12 +6,30 @@
     android:orientation="vertical"
     android:id="@+id/root_layout">
 
-    <!-- 🕐 HEURE ET DATE — Centré, sans texte en dessous -->
+    <!-- 💬 Bouton Messages en haut à droite -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
+        android:layout_height="wrap_content"
+        android:gravity="end|top"
+        android:padding="16dp">
+        
+        <ImageView
+            android:id="@+id/messages_btn"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@android:drawable/ic_dialog_email"
+            android:tint="#FFFFFFFF"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
+    </LinearLayout>
+
+    <!-- 🕐 HEURE ET DATE — DÉPLAÇABLE ! -->
+    <LinearLayout
+        android:id="@+id/time_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
         android:orientation="vertical">
 
         <TextView
@@ -33,6 +51,11 @@
             android:layout_marginTop="8dp"/>
     </LinearLayout>
 
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
     <!-- 🔽 Bouton Ouvrir/Fermer le tiroir -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -52,7 +75,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
 
-    <!-- 📦 TIROIR DES APPLICATIONS — Fond semi-transparent -->
+    <!-- 📦 TIROIR DES APPLICATIONS -->
     <LinearLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
