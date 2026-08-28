@@ -5,6 +5,7 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.PixelFormat
@@ -41,6 +42,7 @@ import com.luncher.databinding.ActivityLauncherBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -162,7 +164,7 @@ class LauncherActivity : AppCompatActivity() {
     
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(contentResolver, 
-            Settings.Secure.ENABLED_NOTIFICATION_LISTENERS)
+            "enabled_notification_listeners")
         return enabledListeners?.contains(packageName) == true
     }
 

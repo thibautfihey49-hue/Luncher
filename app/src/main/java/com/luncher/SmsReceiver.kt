@@ -9,12 +9,12 @@ class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == intent.action) {
             val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-            for (sms in messages) {
+            for ((index, sms) in messages.withIndex()) {
                 val message = Message(
-                    id = sms.messageId.toString(),
+                    id = "sms_${System.currentTimeMillis()}_$index",
                     type = "SMS",
-                    sender = sms.displayOriginatingAddress,
-                    content = sms.displayMessageBody,
+                    sender = sms.displayOriginatingAddress ?: "Inconnu",
+                    content = sms.displayMessageBody ?: "",
                     time = System.currentTimeMillis(),
                     packageName = "sms"
                 )
