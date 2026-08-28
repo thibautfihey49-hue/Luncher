@@ -74,7 +74,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun loadAllApps() {
         b.progress.visibility = View.VISIBLE
         CoroutineScope(Dispatchers.IO).launch {
-            allApps = getAllApps()
+            allApps = getEverySingleApp()
             withContext(Dispatchers.Main) {
                 adapter.setList(allApps)
                 b.progress.visibility = View.GONE
@@ -82,29 +82,41 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ MÉTHODE QUI RÉCUPÈRE VRAIMENT TOUTES LES APPS
-    private fun getAllApps(): List<AppInfo> {
+    // ✅ LES DEUX MÉTHODES COMBINÉES + SANS DOUBLONS
+    private fun getEverySingleApp(): List<AppInfo> {
         val pm = packageManager
+        val uniquePackages = mutableSetOf<String>()
         val result = mutableListOf<AppInfo>()
         
-        // Récupère TOUTES les applications installées
-        val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
-        
-        for (appInfo in packages) {
+        // 📌 MÉTHODE 1 : queryIntentActivities (apps du lanceur)
+        val intent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val launcherApps = pm.queryIntentActivities(intent, 0)
+        for (resolveInfo in launcherApps) {
             try {
-                // Vérifie si cette application a une activité de lancement
-                val launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName)
-                if (launchIntent != null) {
-                    val nom = appInfo.loadLabel(pm).toString()
-                    val icone = appInfo.loadIcon(pm)
-                    result.add(AppInfo(nom, appInfo.packageName, icone))
+                val pkg = resolveInfo.activityInfo.packageName
+                if (uniquePackages.add(pkg)) {
+                    val name = resolveInfo.loadLabel(pm).toString()
+                    val icon = resolveInfo.loadIcon(pm)
+                    result.add(AppInfo(name, pkg, icon))
                 }
-            } catch (e: Exception) {
-                // Ignore les erreurs
-            }
+            } catch (e: Exception) {}
         }
         
-        // Tri alphabétique
+        // 📌 MÉTHODE 2 : getInstalledApplications (TOUTES les apps)
+        val installed = pm.getInstalledApplications(0)
+        for (appInfo in installed) {
+            try {
+                val pkg = appInfo.packageName
+                val launchIntent = pm.getLaunchIntentForPackage(pkg)
+                if (launchIntent != null && uniquePackages.add(pkg)) {
+                    val name = appInfo.loadLabel(pm).toString()
+                    val icon = appInfo.loadIcon(pm)
+                    result.add(AppInfo(name, pkg, icon))
+                }
+            } catch (e: Exception) {}
+        }
+        
+        // Tri alphabétique final
         return result.sortedBy { it.name.lowercase() }
     }
 }
