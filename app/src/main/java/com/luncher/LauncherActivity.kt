@@ -21,6 +21,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
 import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -28,7 +31,6 @@ import androidx.core.content.edit
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
-import com.luncher.databinding.ActivityLauncherBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -38,7 +40,16 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class LauncherActivity : AppCompatActivity() {
-    private lateinit var b: ActivityLauncherBinding
+    
+    private lateinit var heureTexte: TextView
+    private lateinit var dateTexte: TextView
+    private lateinit var toggleBtn: ImageView
+    private lateinit var drawerLayout: LinearLayout
+    private lateinit var searchInput: EditText
+    private lateinit var appsRecycler: RecyclerView
+    private lateinit var rootLayout: LinearLayout
+    private lateinit var timeContainer: LinearLayout
+    
     private lateinit var adapter: AppAdapter
     private lateinit var prefs: SharedPreferences
     private var isDrawerOpen = false
@@ -84,17 +95,26 @@ class LauncherActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        b = ActivityLauncherBinding.inflate(layoutInflater)
-        setContentView(b.root)
+        setContentView(R.layout.activity_launcher)
+        
+        // Initialisation des vues SANS ViewBinding
+        heureTexte = findViewById(R.id.heure_texte)
+        dateTexte = findViewById(R.id.date_texte)
+        toggleBtn = findViewById(R.id.toggle_btn)
+        drawerLayout = findViewById(R.id.drawer_layout)
+        searchInput = findViewById(R.id.search_input)
+        appsRecycler = findViewById(R.id.apps_recycler)
+        rootLayout = findViewById(R.id.root_layout)
+        timeContainer = findViewById(R.id.time_container)
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         setupRecycler()
         setupSearch()
-        b.toggleBtn.setOnClickListener { toggleDrawer() }
-        b.drawerLayout.visibility = View.GONE
-        b.toggleBtn.rotation = 0f
+        toggleBtn.setOnClickListener { toggleDrawer() }
+        drawerLayout.visibility = View.GONE
+        toggleBtn.rotation = 0f
 
         setupDateTime()
         setupDraggableTime()
@@ -208,7 +228,7 @@ class LauncherActivity : AppCompatActivity() {
         var dX = 0f
         var dY = 0f
         
-        b.timeContainer.setOnTouchListener { view, event ->
+        timeContainer.setOnTouchListener { view, event ->
             when (event.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
                     dX = view.x - event.rawX
@@ -236,18 +256,18 @@ class LauncherActivity : AppCompatActivity() {
         val x = prefs.getFloat(KEY_HOUR_X, Float.NaN)
         val y = prefs.getFloat(KEY_HOUR_Y, Float.NaN)
         if (!x.isNaN() && !y.isNaN()) {
-            b.timeContainer.x = x
-            b.timeContainer.y = y
+            timeContainer.x = x
+            timeContainer.y = y
         }
     }
 
     private fun setupLongPressActions() {
-        b.root.setOnLongClickListener {
+        rootLayout.setOnLongClickListener {
             changerFondEcran()
             true
         }
-        b.heureTexte.setOnLongClickListener { showColorPickerDialog(); true }
-        b.dateTexte.setOnLongClickListener { showColorPickerDialog(); true }
+        heureTexte.setOnLongClickListener { showColorPickerDialog(); true }
+        dateTexte.setOnLongClickListener { showColorPickerDialog(); true }
     }
 
     private fun showColorPickerDialog() {
@@ -257,8 +277,8 @@ class LauncherActivity : AppCompatActivity() {
             .setTitle("🎨 Couleur du texte")
             .setSingleChoiceItems(colorNames.toTypedArray(), selectedIndex) { dialog, which ->
                 val newColor = colorValues[which]
-                b.heureTexte.setTextColor(newColor)
-                b.dateTexte.setTextColor(newColor)
+                heureTexte.setTextColor(newColor)
+                dateTexte.setTextColor(newColor)
                 prefs.edit { putInt(KEY_TEXT_COLOR, newColor) }
                 dialog.dismiss()
             }
@@ -268,8 +288,8 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun loadTextColor() {
         val savedColor = prefs.getInt(KEY_TEXT_COLOR, Color.WHITE)
-        b.heureTexte.setTextColor(savedColor)
-        b.dateTexte.setTextColor(savedColor)
+        heureTexte.setTextColor(savedColor)
+        dateTexte.setTextColor(savedColor)
     }
 
     private fun changerFondEcran() {
@@ -302,7 +322,7 @@ class LauncherActivity : AppCompatActivity() {
         try {
             contentResolver.openInputStream(uri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
-                b.root.background = BitmapDrawable(resources, bitmap).apply { setFilterBitmap(true) }
+                rootLayout.background = BitmapDrawable(resources, bitmap).apply { setFilterBitmap(true) }
             }
         } catch (e: Exception) { }
     }
@@ -312,8 +332,8 @@ class LauncherActivity : AppCompatActivity() {
         val dateFormat = SimpleDateFormat("EEEE d MMMM", Locale.FRANCE)
         fun update() {
             val now = Calendar.getInstance()
-            b.heureTexte.text = timeFormat.format(now.time)
-            b.dateTexte.text = dateFormat.format(now.time).replaceFirstChar { it.uppercase() }
+            heureTexte.text = timeFormat.format(now.time)
+            dateTexte.text = dateFormat.format(now.time).replaceFirstChar { it.uppercase() }
         }
         update()
         timeRunnable = object : Runnable {
@@ -329,12 +349,12 @@ class LauncherActivity : AppCompatActivity() {
         adapter = AppAdapter { app ->
             packageManager.getLaunchIntentForPackage(app.packageName)?.let { startActivity(it) }
         }
-        b.appsRecycler.adapter = adapter
-        b.appsRecycler.layoutManager = LinearLayoutManager(this)
+        appsRecycler.adapter = adapter
+        appsRecycler.layoutManager = LinearLayoutManager(this)
     }
 
     private fun setupSearch() {
-        b.searchInput.addTextChangedListener(object : TextWatcher {
+        searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) = Unit
             override fun onTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) {
                 val q = s?.toString() ?: ""
@@ -347,11 +367,11 @@ class LauncherActivity : AppCompatActivity() {
     private fun toggleDrawer() {
         isDrawerOpen = !isDrawerOpen
         if (isDrawerOpen) {
-            b.drawerLayout.visibility = View.VISIBLE
-            b.toggleBtn.rotation = 180f
+            drawerLayout.visibility = View.VISIBLE
+            toggleBtn.rotation = 180f
         } else {
-            b.drawerLayout.visibility = View.GONE
-            b.toggleBtn.rotation = 0f
+            drawerLayout.visibility = View.GONE
+            toggleBtn.rotation = 0f
         }
     }
 
