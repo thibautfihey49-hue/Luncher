@@ -34,7 +34,6 @@ class AppAdapter(
 
     override fun getItemCount(): Int = listeAffichage.size
 
-    // ✅ Met à jour la liste complètement
     fun updateListe(nouvelleListe: List<AppInfo>) {
         listeAffichage = nouvelleListe
         notifyDataSetChanged()
