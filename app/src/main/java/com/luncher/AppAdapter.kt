@@ -13,7 +13,6 @@ class AppAdapter(
 ) : RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
 
     private var apps: List<AppInfo> = emptyList()
-    private var filtered: List<AppInfo> = emptyList()
 
     inner class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.app_icon)
@@ -26,24 +25,16 @@ class AppAdapter(
     }
 
     override fun onBindViewHolder(h: AppViewHolder, i: Int) {
-        val app = filtered[i]
+        val app = apps[i]
         h.name.text = app.name
         h.icon.setImageDrawable(app.icon)
         h.itemView.setOnClickListener { onAppClick(app) }
     }
 
-    override fun getItemCount() = filtered.size
+    override fun getItemCount() = apps.size
 
     fun setList(list: List<AppInfo>) {
         apps = list
-        filtered = list
-        notifyDataSetChanged()
-    }
-
-    fun search(query: String) {
-        filtered = if (query.isEmpty()) apps else apps.filter { 
-            it.name.contains(query, ignoreCase = true) 
-        }
         notifyDataSetChanged()
     }
 }

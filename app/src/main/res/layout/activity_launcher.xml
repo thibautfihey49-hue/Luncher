@@ -24,7 +24,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Glissez vers le bas ou cliquez ↓"
+            android:text="Cliquez sur la flèche ↓ pour voir vos apps"
             android:textSize="14sp"
             android:textColor="#718096"
             android:layout_marginTop="8dp"/>
@@ -35,8 +35,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingVertical="12dp"
-        android:background="#FFFFFF">
+        android:paddingVertical="16dp"
+        android:background="#FFFFFF"
+        android:elevation="2dp">
 
         <ImageView
             android:id="@+id/toggle_btn"
@@ -44,7 +45,8 @@
             android:layout_height="48dp"
             android:src="@drawable/ic_expand"
             android:clickable="true"
-            android:focusable="true"/>
+            android:focusable="true"
+            android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
 
     <!-- 📦 Tiroir des Applications -->
@@ -65,7 +67,9 @@
             android:background="@drawable/search_bg"
             android:paddingHorizontal="16dp"
             android:textSize="14sp"
-            android:layout_margin="16dp"/>
+            android:layout_margin="16dp"
+            android:inputType="textPersonName"
+            android:gravity="center_vertical"/>
 
         <ProgressBar
             android:id="@+id/progress"
