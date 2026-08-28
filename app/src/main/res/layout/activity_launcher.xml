@@ -11,16 +11,6 @@
         android:layout_height="wrap_content"
         android:gravity="end|top"
         android:padding="16dp">
-        
-        <ImageView
-            android:id="@+id/messages_btn"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@android:drawable/ic_dialog_email"
-            android:tint="#FFFFFFFF"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
     </LinearLayout>
 
     <LinearLayout
