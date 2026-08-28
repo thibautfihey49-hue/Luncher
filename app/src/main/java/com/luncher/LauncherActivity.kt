@@ -1,6 +1,8 @@
 package com.luncher
 
 import android.content.Intent
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
@@ -18,7 +20,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var b: ActivityLauncherBinding
     private lateinit var adapter: AppAdapter
     private var isDrawerOpen = false
-    private var allApps: List<AppInfo> = emptyList()
+    private var allApps = listOf<AppInfo>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,50 +29,33 @@ class LauncherActivity : AppCompatActivity() {
 
         setupRecycler()
         setupSearch()
-        setupDrawerToggle()
-        loadApps()
-
+        b.toggleBtn.setOnClickListener { toggleDrawer() }
+        
         b.drawerLayout.visibility = View.GONE
         b.toggleBtn.rotation = 0f
+
+        loadAllApps()
     }
 
     private fun setupRecycler() {
         adapter = AppAdapter { app ->
-            packageManager.getLaunchIntentForPackage(app.packageName)?.let {
-                startActivity(it)
-            }
+            packageManager.getLaunchIntentForPackage(app.packageName)?.let { startActivity(it) }
         }
-        b.appsRecycler.apply {
-            adapter = this@LauncherActivity.adapter
-            layoutManager = GridLayoutManager(this@LauncherActivity, 4)
-        }
+        b.appsRecycler.adapter = adapter
+        b.appsRecycler.layoutManager = GridLayoutManager(this, 4)
     }
 
     private fun setupSearch() {
         b.searchInput.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val terme = s?.toString()?.trim() ?: ""
-                filtrer(terme)
+            override fun beforeTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) {
+                val q = s?.toString() ?: ""
+                adapter.setList(if (q.isEmpty()) allApps else allApps.filter { 
+                    it.name.contains(q, ignoreCase = true) 
+                })
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })
-    }
-
-    private fun filtrer(terme: String) {
-        val resultat = if (terme.isEmpty()) {
-            allApps
-        } else {
-            allApps.filter { 
-                it.name.contains(terme, ignoreCase = true) ||
-                it.packageName.contains(terme, ignoreCase = true)
-            }
-        }
-        adapter.updateListe(resultat)
-    }
-
-    private fun setupDrawerToggle() {
-        b.toggleBtn.setOnClickListener { toggleDrawer() }
     }
 
     private fun toggleDrawer() {
@@ -79,44 +64,43 @@ class LauncherActivity : AppCompatActivity() {
             b.drawerLayout.visibility = View.VISIBLE
             b.toggleBtn.rotation = 180f
             b.searchInput.text.clear()
-            filtrer("")
+            adapter.setList(allApps)
         } else {
             b.drawerLayout.visibility = View.GONE
             b.toggleBtn.rotation = 0f
         }
     }
 
-    private fun loadApps() {
+    private fun loadAllApps() {
         b.progress.visibility = View.VISIBLE
         CoroutineScope(Dispatchers.IO).launch {
-            allApps = getAppsOfficialMethod()
+            allApps = getAllApps()
             withContext(Dispatchers.Main) {
-                adapter.updateListe(allApps)
+                adapter.setList(allApps)
                 b.progress.visibility = View.GONE
             }
         }
     }
 
-    // ✅ LA MÉTHODE OFFICIELLE — COMME TOUS LES LANCEURS
-    private fun getAppsOfficialMethod(): List<AppInfo> {
+    // ✅ MÉTHODE QUI RÉCUPÈRE VRAIMENT TOUTES LES APPS
+    private fun getAllApps(): List<AppInfo> {
         val pm = packageManager
-        val intent = Intent(Intent.ACTION_MAIN, null)
-        intent.addCategory(Intent.CATEGORY_LAUNCHER)
-        
-        // ✅ CECI EST LA SEULE BONNE MÉTHODE
-        val resolveInfos = pm.queryIntentActivities(intent, 0)
-        
         val result = mutableListOf<AppInfo>()
         
-        for (resolveInfo in resolveInfos) {
+        // Récupère TOUTES les applications installées
+        val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+        
+        for (appInfo in packages) {
             try {
-                val nom = resolveInfo.loadLabel(pm).toString()
-                val paquet = resolveInfo.activityInfo.packageName
-                val icone = resolveInfo.loadIcon(pm)
-                
-                result.add(AppInfo(nom, paquet, icone))
+                // Vérifie si cette application a une activité de lancement
+                val launchIntent = pm.getLaunchIntentForPackage(appInfo.packageName)
+                if (launchIntent != null) {
+                    val nom = appInfo.loadLabel(pm).toString()
+                    val icone = appInfo.loadIcon(pm)
+                    result.add(AppInfo(nom, appInfo.packageName, icone))
+                }
             } catch (e: Exception) {
-                // Ignorer
+                // Ignore les erreurs
             }
         }
         

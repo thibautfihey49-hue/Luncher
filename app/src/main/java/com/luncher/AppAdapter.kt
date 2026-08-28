@@ -8,34 +8,28 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
 
-class AppAdapter(
-    private val onAppClick: (AppInfo) -> Unit
-) : RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
-
-    private var listeAffichage: List<AppInfo> = emptyList()
-
-    inner class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val icon: ImageView = view.findViewById(R.id.app_icon)
-        val name: TextView = view.findViewById(R.id.app_name)
+class AppAdapter(private val click: (AppInfo) -> Unit) : RecyclerView.Adapter<AppAdapter.Holder>() {
+    private var list = emptyList<AppInfo>()
+    
+    class Holder(v: View) : RecyclerView.ViewHolder(v) {
+        val icon: ImageView = v.findViewById(R.id.app_icon)
+        val name: TextView = v.findViewById(R.id.app_name)
     }
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
-        val vue = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_app, parent, false)
-        return AppViewHolder(vue)
+    
+    override fun onCreateViewHolder(p: ViewGroup, t: Int) = 
+        Holder(LayoutInflater.from(p.context).inflate(R.layout.item_app, p, false))
+    
+    override fun onBindViewHolder(h: Holder, i: Int) {
+        val app = list[i]
+        h.name.text = app.name
+        h.icon.setImageDrawable(app.icon)
+        h.itemView.setOnClickListener { click(app) }
     }
-
-    override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-        val app = listeAffichage[position]
-        holder.name.text = app.name
-        holder.icon.setImageDrawable(app.icon)
-        holder.itemView.setOnClickListener { onAppClick(app) }
-    }
-
-    override fun getItemCount(): Int = listeAffichage.size
-
-    fun updateListe(nouvelleListe: List<AppInfo>) {
-        listeAffichage = nouvelleListe
+    
+    override fun getItemCount() = list.size
+    
+    fun setList(new: List<AppInfo>) {
+        list = new
         notifyDataSetChanged()
     }
 }
