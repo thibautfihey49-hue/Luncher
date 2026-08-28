@@ -1,31 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    # 📱 Fond d'écran & Apps
+    <!-- Fond d'écran & Apps -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" android:minSdkVersion="33" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
     
-    # 💬 SMS
+    <!-- SMS -->
     <uses-permission android:name="android.permission.READ_SMS" />
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     
-    # 👁️ Lire les notifications (WhatsApp, Gmail, tous)
+    <!-- Lire les notifications -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
     
-    # 🪟 Afficher PAR-DESSUS les autres applications
+    <!-- Afficher par-dessus les autres apps -->
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
-    
-    # 🔗 Service de lecture des notifications
-    <service
-        android:name=".NotificationListener"
-        android:exported="true"
-        android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
-        <intent-filter>
-            <action android:name="android.service.notification.NotificationListenerService" />
-        </intent-filter>
-    </service>
 
     <application
         android:allowBackup="true"
@@ -43,5 +34,24 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
+
+        <!-- Service de lecture des notifications -->
+        <service
+            android:name=".NotificationListener"
+            android:exported="true"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
+        <!-- Récepteur SMS -->
+        <receiver
+            android:name=".SmsReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.provider.Telephony.SMS_RECEIVED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

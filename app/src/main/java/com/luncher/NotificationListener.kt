@@ -42,14 +42,9 @@ class NotificationListener : NotificationListenerService() {
         addMessage(message)
     }
     
-    override fun onNotificationRemoved(sbn: StatusBarNotification) {
-        super.onNotificationRemoved(sbn)
-        // Optionnel : supprimer le message quand la notification est fermée
-    }
-    
     private fun addMessage(message: Message) {
         val current = messagesFlow.value.toMutableList()
-        current.add(0, message) // Nouveaux messages EN HAUT
+        current.add(0, message)
         messagesFlow.value = current
     }
 }

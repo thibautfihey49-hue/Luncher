@@ -2,10 +2,8 @@ package com.luncher
 
 import android.Manifest
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -19,26 +17,30 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
-import android.widget.*
+import android.widget.Button
+import android.widget.EditText
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
+import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
 import com.luncher.databinding.ActivityLauncherBinding
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.collect
 import java.io.InputStream
 import java.text.SimpleDateFormat
 import java.util.*
@@ -53,7 +55,6 @@ class LauncherActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timeRunnable: Runnable
     
-    // 🪟 Fenêtre flottante des messages
     private var floatingWindow: View? = null
     private var isMessageBoxOpen = false
     private lateinit var windowManager: WindowManager
@@ -87,12 +88,11 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private val requestPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            // Permission accordée
-        } else {
-            Toast.makeText(this, "❌ Permission nécessaire", Toast.LENGTH_SHORT).show()
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        val allGranted = permissions.all { it.value }
+        if (!allGranted) {
+            Toast.makeText(this, "⚠️ Certaines permissions sont manquantes", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -113,53 +113,50 @@ class LauncherActivity : AppCompatActivity() {
         b.toggleBtn.rotation = 0f
 
         setupDateTime()
-        setupDraggableTime() // 🕐 DÉPLACEMENT DE L'HEURE
+        setupDraggableTime()
         setupLongPressActions()
         loadSavedWallpaper()
         loadTextColor()
         loadTimePosition()
         loadAllApps()
-        setupMessagesObserver() // 💬 Écouter les messages
-        checkAllPermissions() // 🔑 Demander TOUTES les permissions
+        setupMessagesObserver()
+        checkAllPermissions()
     }
 
-    // 🔑 Vérifier et demander TOUTES les permissions
     private fun checkAllPermissions() {
-        val permissionsToRequest = mutableListOf<String>()
+        val permissionsNeeded = mutableListOf<String>()
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.READ_MEDIA_IMAGES)
+                permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
             }
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
             }
         } else {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                permissionsToRequest.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+                permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
             }
         }
         
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissionsToRequest.add(Manifest.permission.READ_SMS)
-            permissionsToRequest.add(Manifest.permission.RECEIVE_SMS)
+            permissionsNeeded.add(Manifest.permission.READ_SMS)
+            permissionsNeeded.add(Manifest.permission.RECEIVE_SMS)
         }
         
-        if (permissionsToRequest.isNotEmpty()) {
-            requestPermissionLauncher.launch(permissionsToRequest.toTypedArray())
+        if (permissionsNeeded.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
         }
         
-        // 🔑 Permission "Afficher par-dessus les autres apps"
         if (!Settings.canDrawOverlays(this)) {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
         }
         
-        // 🔑 Permission "Lire les notifications"
         if (!isNotificationListenerEnabled()) {
             val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
             startActivity(intent)
-            Toast.makeText(this, "✅ Active l'autorisation pour Luncher", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "✅ Active l'autorisation de notifications pour Luncher", Toast.LENGTH_LONG).show()
         }
     }
     
@@ -169,46 +166,28 @@ class LauncherActivity : AppCompatActivity() {
         return enabledListeners?.contains(packageName) == true
     }
 
-    // 🕐 DÉPLACER l'heure et la date librement
     private fun setupDraggableTime() {
         var dX = 0f
         var dY = 0f
-        var startX = 0f
-        var startY = 0f
         
-        val timeContainer = b.timeContainer
-        
-        timeContainer.setOnTouchListener { view, event ->
+        b.timeContainer.setOnTouchListener { view, event ->
             when (event.actionMasked) {
                 MotionEvent.ACTION_DOWN -> {
                     dX = view.x - event.rawX
                     dY = view.y - event.rawY
-                    startX = view.x
-                    startY = view.y
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    view.animate()
-                        .x(event.rawX + dX)
-                        .y(event.rawY + dY)
-                        .setDuration(0)
-                        .start()
+                    view.x = event.rawX + dX
+                    view.y = event.rawY + dY
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    // Sauvegarder la position
                     prefs.edit {
                         putFloat(KEY_HOUR_X, view.x)
                         putFloat(KEY_HOUR_Y, view.y)
                     }
-                    // Vérifier si c'était un clic long (changer couleur) ou un déplacement
-                    val moved = Math.abs(view.x - startX) > 10 || Math.abs(view.y - startY) > 10
-                    if (moved) {
-                        true
-                    } else {
-                        view.performClick()
-                        false
-                    }
+                    true
                 }
                 else -> false
             }
@@ -275,13 +254,10 @@ class LauncherActivity : AppCompatActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
 
-        when {
-            ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED -> {
-                openGallery()
-            }
-            else -> {
-                requestPermissionLauncher.launch(permission)
-            }
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            openGallery()
+        } else {
+            requestPermissionLauncher.launch(arrayOf(permission))
         }
     }
 
@@ -341,41 +317,29 @@ class LauncherActivity : AppCompatActivity() {
         handler.post(timeRunnable)
     }
 
-    // 💬 Observer les messages entrants
     private fun setupMessagesObserver() {
-        CoroutineScope(Dispatchers.Main).launch {
-            NotificationListener.messagesFlow.collect { messages ->
-                messagesAdapter.setList(messages)
-                // Faire clignoter l'icône de message si nouveau message
-                if (messages.isNotEmpty()) {
-                    b.messagesBtn.alpha = 1f
-                }
-            }
-        }
-        
         messagesAdapter = MessagesAdapter(
             onDismiss = { msg -> dismissMessage(msg) },
             onReply = { msg -> replyToMessage(msg) },
             onOpen = { msg -> openMessageApp(msg) }
         )
+        
+        CoroutineScope(Dispatchers.Main).launch {
+            NotificationListener.messagesFlow.collect { messages ->
+                messagesAdapter.setList(messages)
+            }
+        }
     }
 
-    // 📥 Ouvrir/Fermer la boîte de messages
     private fun toggleMessageBox() {
-        if (isMessageBoxOpen) {
-            closeMessageBox()
-        } else {
-            openMessageBox()
-        }
+        if (isMessageBoxOpen) closeMessageBox() else openMessageBox()
     }
 
     private fun openMessageBox() {
         if (floatingWindow != null) return
-        
         isMessageBoxOpen = true
         b.messagesBtn.rotation = 45f
         
-        // 🪟 Créer la fenêtre flottante PAR-DESSUS TOUT
         val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
         floatingWindow = inflater.inflate(R.layout.floating_message_box, null)
         
@@ -383,6 +347,7 @@ class LauncherActivity : AppCompatActivity() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             } else {
+                @Suppress("DEPRECATION")
                 WindowManager.LayoutParams.TYPE_PHONE
             },
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -392,9 +357,7 @@ class LauncherActivity : AppCompatActivity() {
         )
         layoutParams.gravity = Gravity.TOP
         
-        floatingWindow?.findViewById<ImageView>(R.id.close_btn)?.setOnClickListener {
-            closeMessageBox()
-        }
+        floatingWindow?.findViewById<ImageView>(R.id.close_btn)?.setOnClickListener { closeMessageBox() }
         
         val recycler = floatingWindow?.findViewById<RecyclerView>(R.id.messages_list)
         recycler?.adapter = messagesAdapter
@@ -425,11 +388,12 @@ class LauncherActivity : AppCompatActivity() {
             }
             "WHATSAPP" -> {
                 try {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/${msg.sender.replace(Regex("[^0-9]"), "")}"))
+                    val num = msg.sender.replace(Regex("[^0-9]"), "")
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://wa.me/$num"))
                     startActivity(intent)
                 } catch (e: Exception) {
-                    val pm = packageManager.getLaunchIntentForPackage("com.whatsapp")
-                    pm?.let { startActivity(it) }
+                    val intent = packageManager.getLaunchIntentForPackage("com.whatsapp")
+                    intent?.let { startActivity(it) }
                 }
             }
             "GMAIL" -> {

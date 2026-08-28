@@ -36,7 +36,6 @@ class MessagesAdapter(
     override fun onBindViewHolder(h: Holder, i: Int) {
         val msg = list[i]
         
-        // Icône selon le type
         val iconRes = when (msg.type) {
             "SMS" -> android.R.drawable.ic_dialog_email
             "WHATSAPP" -> android.R.drawable.ic_menu_call
