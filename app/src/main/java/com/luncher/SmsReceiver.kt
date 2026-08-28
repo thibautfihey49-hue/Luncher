@@ -16,10 +16,9 @@ class SmsReceiver : BroadcastReceiver() {
                     sender = sms.displayOriginatingAddress ?: "Inconnu",
                     content = sms.displayMessageBody ?: "",
                     time = System.currentTimeMillis(),
-                    packageName = "sms"
+                    packageName = "com.android.mms"
                 )
-                NotificationListener.messagesFlow.value = 
-                    listOf(message) + NotificationListener.messagesFlow.value
+                NotificationListener.messagesFlow.value = listOf(message) + NotificationListener.messagesFlow.value
             }
         }
     }

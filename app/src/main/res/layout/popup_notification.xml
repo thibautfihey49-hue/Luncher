@@ -3,21 +3,30 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp"
-    android:elevation="24dp">
+    android:padding="18dp"
+    android:layout_marginBottom="14dp"
+    android:elevation="32dp">
 
+    <!-- En-tête -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <ImageView
-            android:id="@+id/notif_icon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:layout_marginEnd="12dp"
-            android:tint="#FF333333"/>
+        <LinearLayout
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="#FFFFFF30"
+            android:gravity="center"
+            android:layout_marginEnd="14dp">
+            
+            <ImageView
+                android:id="@+id/notif_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:tint="#FFFFFF"/>
+        </LinearLayout>
 
         <LinearLayout
             android:layout_width="0dp"
@@ -29,28 +38,85 @@
                 android:id="@+id/notif_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
+                android:textSize="15sp"
                 android:textStyle="bold"
-                android:textColor="#FF333333"/>
+                android:textColor="#FFFFFF"/>
 
             <TextView
                 android:id="@+id/notif_sender"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="12sp"
-                android:textColor="#FF666666"
+                android:textSize="13sp"
+                android:textColor="#F0FFFFFF"
                 android:layout_marginTop="2dp"/>
 
             <TextView
                 android:id="@+id/notif_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
-                android:textColor="#FF444444"
-                android:layout_marginTop="4dp"
-                android:maxLines="2"
+                android:textSize="14sp"
+                android:textColor="#E0FFFFFF"
+                android:layout_marginTop="6dp"
+                android:maxLines="4"
                 android:ellipsize="end"/>
         </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_close"
+            android:layout_width="wrap_content"
+            android:layout_height="34dp"
+            android:text="✕ Fermer"
+            android:textSize="12sp"
+            android:backgroundTint="#FFFFFF30"
+            android:textColor="#FFFFFF"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:layout_marginStart="8dp"
+            android:elevation="0dp"/>
+    </LinearLayout>
+
+    <!-- Séparateur -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#20FFFFFF"
+        android:layout_marginTop="14dp"
+        android:layout_marginBottom="12dp"/>
+
+    <!-- Champ de réponse -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/et_reply"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="Écrivez votre réponse..."
+            android:textSize="14sp"
+            android:minHeight="44dp"
+            android:maxLines="3"
+            android:background="#FFFFFF15"
+            android:textColor="#FFFFFF"
+            android:textCursorDrawable="@null"
+            android:padding="12dp"
+            android:hintTextColor="#80FFFFFF"/>
+
+        <Button
+            android:id="@+id/btn_send_reply"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:text="➤ Envoyer"
+            android:textSize="13sp"
+            android:backgroundTint="#FFFFFF"
+            android:textColor="#000000"
+            android:layout_marginStart="10dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:textStyle="bold"/>
     </LinearLayout>
 
 </LinearLayout>
