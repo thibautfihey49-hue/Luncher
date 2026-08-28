@@ -1,10 +1,52 @@
-package com.luncher; import android.view.*; import android.widget.*; import androidx.recyclerview.widget.RecyclerView; import com.luncher.data.AppInfo
-class AppAdapter(private val cb:(AppInfo)->Unit):RecyclerView.Adapter<AppAdapter.VH>(){
-    private var all=listOf<AppInfo>(); private var filtered=all
-    override fun onCreateViewHolder(p:ViewGroup,t:Int):VH=VH(LayoutInflater.from(p.context).inflate(R.layout.item_app,p,false))
-    override fun onBindViewHolder(h:VH,i:Int)=h.bind(filtered[i])
-    override fun getItemCount()=filtered.size
-    fun setApps(a:List<AppInfo>){all=a;filtered=a;notifyDataSetChanged()}
-    fun filter(q:String){val s=q.lowercase();filtered=if(s.isEmpty())all else all.filter{it.name.lowercase().contains(s)};notifyDataSetChanged()}
-    inner class VH(v:View):RecyclerView.ViewHolder(v){private val i=v.findViewById<ImageView>(R.id.app_icon);private val n=v.findViewById<TextView>(R.id.app_name);fun bind(a:AppInfo){n.text=a.name;i.setImageDrawable(a.icon);v.setOnClickListener{cb(a)}}}
+package com.luncher
+
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.TextView
+import androidx.recyclerview.widget.RecyclerView
+import com.luncher.data.AppInfo
+
+class AppAdapter(private val onAppClick: (AppInfo) -> Unit) :
+    RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
+
+    private var allApps = listOf<AppInfo>()
+    private var filteredApps = listOf<AppInfo>()
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_app, parent, false)
+        return AppViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
+        holder.bind(filteredApps[position])
+    }
+
+    override fun getItemCount(): Int = filteredApps.size
+
+    fun setApps(apps: List<AppInfo>) {
+        allApps = apps
+        filteredApps = apps
+        notifyDataSetChanged()
+    }
+
+    fun filter(query: String) {
+        val q = query.lowercase()
+        filteredApps = if (q.isEmpty()) allApps
+        else allApps.filter { it.name.lowercase().contains(q) }
+        notifyDataSetChanged()
+    }
+
+    inner class AppViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val icon: ImageView = itemView.findViewById(R.id.app_icon)
+        private val name: TextView = itemView.findViewById(R.id.app_name)
+
+        fun bind(app: AppInfo) {
+            name.text = app.name
+            icon.setImageDrawable(app.icon)
+            itemView.setOnClickListener { onAppClick(app) }
+        }
+    }
 }
