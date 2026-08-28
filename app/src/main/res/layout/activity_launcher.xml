@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#0F0F0F" android:orientation="vertical">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp" android:background="#1A1A1A" android:elevation="4dp">
+        <EditText android:id="@+id/search_input" android:layout_width="match_parent" android:layout_height="48dp" android:hint="🔍 Rechercher une application..." android:textColor="#FFFFFF" android:textColorHint="#888888" android:background="#2A2A2A" android:paddingHorizontal="16dp" android:singleLine="true"/>
+    </LinearLayout>
+    <ProgressBar android:id="@+id/progress" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone"/>
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/apps_recycler" android:layout_width="match_parent" android:layout_height="match_parent" android:padding="12dp" android:clipToPadding="false"/>
+</LinearLayout>

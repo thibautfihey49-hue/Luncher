@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources><style name="Theme.Luncher" parent="Theme.Material3.Dark.NoActionBar"><item name="android:windowContentTransitions">true</item><item name="android:animationDuration">120</item><item name="android:windowDisablePreview">true</item></style></resources>
