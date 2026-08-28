@@ -185,7 +185,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun isNotificationListenerEnabled(): Boolean {
-        val enabledListeners = Settings.Secure.getString(contentResolver, Settings.Secure.ENABLED_NOTIFICATION_LISTENERS)
+        val enabledListeners = Settings.Secure.getString(contentResolver, Settings.Secure.Settings.Secure.ENABLED_NOTIFICATION_LISTENERS)
         val myListener = "$packageName/.data.NotificationListener"
         return enabledListeners != null && enabledListeners.contains(myListener)
     }
