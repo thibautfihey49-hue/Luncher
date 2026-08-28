@@ -181,12 +181,12 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    // ✅ MÉTHODE SIMPLIFIÉE — PAS d'erreur Shader
     private fun setWallpaperFromUri(uri: Uri) {
         try {
             val inputStream = contentResolver.openInputStream(uri)
             val bitmap = BitmapFactory.decodeStream(inputStream)
             val drawable = BitmapDrawable(resources, bitmap)
-            drawable.setTileModeXY(android.graphics.drawable.Shader.TileMode.CLAMP, android.graphics.drawable.Shader.TileMode.CLAMP)
             drawable.gravity = android.view.Gravity.FILL
             b.root.background = drawable
         } catch (e: Exception) {
