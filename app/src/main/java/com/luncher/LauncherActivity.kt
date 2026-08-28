@@ -1,15 +1,24 @@
 package com.luncher
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.provider.OpenableColumns
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
+import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import androidx.recyclerview.widget.GridLayoutManager
 import com.luncher.data.AppInfo
 import com.luncher.databinding.ActivityLauncherBinding
@@ -28,6 +37,34 @@ class LauncherActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timeRunnable: Runnable
 
+    // 📌 Gestion du fond d'écran
+    private val PREFS_NAME = "LuncherPrefs"
+    private val KEY_WALLPAPER_URI = "wallpaper_uri"
+
+    // 📌 Ouvrir la galerie pour choisir une image
+    private val pickImageLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == RESULT_OK) {
+            result.data?.data?.let { uri ->
+                saveWallpaperUri(uri)
+                setWallpaperFromUri(uri)
+                Toast.makeText(this, "✅ Fond d'écran changé !", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    // 📌 Demander la permission d'accéder aux images
+    private val requestPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            openGallery()
+        } else {
+            Toast.makeText(this, "❌ Permission nécessaire pour accéder à vos images", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         b = ActivityLauncherBinding.inflate(layoutInflater)
@@ -41,10 +78,76 @@ class LauncherActivity : AppCompatActivity() {
         b.toggleBtn.rotation = 0f
 
         setupDateTime()
+        setupLongPressWallpaper()
+        loadSavedWallpaper()
         loadAllApps()
     }
 
-    // ✅ MISE À JOUR HEURE ET DATE EN TEMPS RÉEL
+    // ✅ APPUI LONG SUR L'ESPACE VIDE → CHANGER LE FOND
+    private fun setupLongPressWallpaper() {
+        b.root.setOnLongClickListener {
+            changerFondEcran()
+            true
+        }
+    }
+
+    // ✅ DEMANDER PERMISSION + OUVRIR GALERIE
+    private fun changerFondEcran() {
+        val permission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            Manifest.permission.READ_MEDIA_IMAGES
+        } else {
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        }
+
+        when {
+            ContextCompat.checkSelfPermission(this, permission) == android.content.pm.PackageManager.PERMISSION_GRANTED -> {
+                openGallery()
+            }
+            else -> {
+                requestPermissionLauncher.launch(permission)
+            }
+        }
+    }
+
+    // ✅ OUVRIR LA GALERIE D'IMAGES
+    private fun openGallery() {
+        val intent = Intent(Intent.ACTION_PICK)
+        intent.type = "image/*"
+        pickImageLauncher.launch(Intent.createChooser(intent, "Choisir une image"))
+    }
+
+    // ✅ ENREGISTRER L'IMAGE CHOISIE
+    private fun saveWallpaperUri(uri: Uri) {
+        contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        getSharedPreferences(PREFS_NAME, MODE_PRIVATE).edit {
+            putString(KEY_WALLPAPER_URI, uri.toString())
+        }
+    }
+
+    // ✅ CHARGER LE FOND SAUVEGARDÉ AU DÉMARRAGE
+    private fun loadSavedWallpaper() {
+        val prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
+        val uriString = prefs.getString(KEY_WALLPAPER_URI, null)
+        uriString?.let { uriStr ->
+            val uri = Uri.parse(uriStr)
+            setWallpaperFromUri(uri)
+        }
+    }
+
+    // ✅ APPLIQUER L'IMAGE COMME FOND D'ÉCRAN
+    private fun setWallpaperFromUri(uri: Uri) {
+        try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val bitmap = BitmapFactory.decodeStream(inputStream)
+            b.root.setBackgroundColor(0x00000000) // Supprimer le fond uni
+            b.root.background = android.graphics.drawable.BitmapDrawable(resources, bitmap)
+            b.root.alpha = 1f
+        } catch (e: Exception) {
+            Toast.makeText(this, "❌ Impossible de charger l'image", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ✅ HEURE ET DATE EN TEMPS RÉEL
     private fun setupDateTime() {
         val timeFormat = SimpleDateFormat("HH:mm", Locale.FRANCE)
         val dateFormat = SimpleDateFormat("EEEE d MMMM", Locale.FRANCE)
@@ -55,13 +158,12 @@ class LauncherActivity : AppCompatActivity() {
             b.dateTexte.text = dateFormat.format(maintenant.time).replaceFirstChar { it.uppercase() }
         }
 
-        update() // Première mise à jour immédiate
+        update()
         
-        // Mise à jour chaque minute
         timeRunnable = object : Runnable {
             override fun run() {
                 update()
-                handler.postDelayed(this, 60000) // 60 secondes
+                handler.postDelayed(this, 60000)
             }
         }
         handler.post(timeRunnable)
