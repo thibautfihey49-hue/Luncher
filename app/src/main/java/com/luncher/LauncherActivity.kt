@@ -201,58 +201,60 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun setupDrawer() {
-        var startY = 0f
-        drawerHandle.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) startY = event.rawY
-            if (event.action == MotionEvent.ACTION_UP) {
-                if (startY - event.rawY > 100) openDrawer()
-            }
-            true
-        }
-        root.setOnTouchListener { _, event ->
-            if (drawerContainer.visibility == View.VISIBLE) {
-                false
-            } else {
+        drawerHandle.setOnClickListener { openDrawer() }
+        drawerHandle.setOnTouchListener(object : View.OnTouchListener {
+            var startY = 0f
+            override fun onTouch(v: View, event: MotionEvent): Boolean {
                 if (event.action == MotionEvent.ACTION_DOWN) startY = event.rawY
-                if (event.action == MotionEvent.ACTION_UP) {
-                    val diff = startY - event.rawY
-                    val fromBottom = root.height - event.rawY < 200
-                    if (diff > 120 && fromBottom) openDrawer()
-                }
-                false
+                if (event.action == MotionEvent.ACTION_UP) { openDrawer() }
+                return false
             }
-        }
-        var searchStartY = 0f
-        drawerSearchHandle.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) searchStartY = event.rawY
-            if (event.action == MotionEvent.ACTION_UP) {
-                if (event.rawY - searchStartY > 100) closeDrawer()
-            }
-            true
-        }
+        })
         val gd = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, vx: Float, vy: Float): Boolean {
-                if (vy > 800) {
-                    closeDrawer()
-                    return true
+                if (e1 == null || e2 == null) return false
+                val dy = e1.y - e2.y
+                val dx = e1.x - e2.x
+                if (dy > 100 && Math.abs(dy) > Math.abs(dx) && Math.abs(vy) > 300) {
+                    if (drawerContainer.visibility != View.VISIBLE && e1.y > root.height * 0.3f) { openDrawer(); return true }
+                }
+                if (drawerContainer.visibility == View.VISIBLE && dy < -100 && Math.abs(vy) > 300) { closeDrawer(); return true }
+                return false
+            }
+        })
+        root.setOnTouchListener(object : View.OnTouchListener {
+            var sy = 0f
+            override fun onTouch(v: View, e: MotionEvent): Boolean {
+                gd.onTouchEvent(e)
+                if (e.action == MotionEvent.ACTION_DOWN) sy = e.rawY
+                if (e.action == MotionEvent.ACTION_UP) {
+                    val diff = sy - e.rawY
+                    if (drawerContainer.visibility != View.VISIBLE && diff > 80 && sy > root.height * 0.3f) { openDrawer(); return true }
                 }
                 return false
             }
         })
-        searchBar.setOnTouchListener { _, event ->
-            gd.onTouchEvent(event)
-            if (event.action == MotionEvent.ACTION_DOWN) searchStartY = event.rawY
-            if (event.action == MotionEvent.ACTION_UP) {
-                if (event.rawY - searchStartY > 120) {
-                    closeDrawer()
-                    return true
-                }
+        drawerSearchHandle.setOnTouchListener(object : View.OnTouchListener {
+            var sy = 0f
+            override fun onTouch(v: View, e: MotionEvent): Boolean {
+                if (e.action == MotionEvent.ACTION_DOWN) sy = e.rawY
+                if (e.action == MotionEvent.ACTION_UP) { if (e.rawY - sy > 80) closeDrawer() }
+                return true
             }
-            false
-        }
+        })
+        searchBar.setOnTouchListener(object : View.OnTouchListener {
+            var sy = 0f
+            override fun onTouch(v: View, e: MotionEvent): Boolean {
+                gd.onTouchEvent(e)
+                if (e.action == MotionEvent.ACTION_DOWN) sy = e.rawY
+                if (e.action == MotionEvent.ACTION_UP) { if (e.rawY - sy > 80) { closeDrawer(); return true } }
+                return false
+            }
+        })
     }
 
-    private fun openDrawer() {
+    
+        private fun openDrawer() {
         drawerContainer.visibility = View.VISIBLE
         drawerContainer.alpha = 0f
         drawerContainer.animate().alpha(1f).setDuration(200).start()
