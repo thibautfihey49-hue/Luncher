@@ -76,7 +76,7 @@
         android:orientation="vertical"
         android:background="#F0000000"
         android:elevation="24dp"
-        android:translationY="100%"
+        android:translationY="1000dp"
         android:visibility="gone">
 
         <!-- Barre de recherche -->
