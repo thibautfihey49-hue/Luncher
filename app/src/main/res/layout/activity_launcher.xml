@@ -1,67 +1,89 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/root_layout"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:id="@+id/root_layout"
     android:background="#000000">
 
+    <!-- ===== ÉCRAN D'ACCUEIL ===== -->
     <LinearLayout
-        android:id="@+id/time_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="80dp"
-        android:padding="16dp">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/heure_texte"
+        <LinearLayout
+            android:id="@+id/time_container"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textSize="72sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFF"
-            android:fontFamily="sans-serif-light"/>
+            android:orientation="vertical"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="80dp"
+            android:padding="16dp">
 
-        <TextView
-            android:id="@+id/date_texte"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Lundi 1 Janvier"
-            android:textSize="18sp"
-            android:textColor="#E0FFFFFF"
-            android:layout_marginTop="4dp"/>
+            <TextView
+                android:id="@+id/heure_texte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textSize="72sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:fontFamily="sans-serif-light"/>
+
+            <TextView
+                android:id="@+id/date_texte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lundi 1 Janvier"
+                android:textSize="18sp"
+                android:textColor="#E0FFFFFF"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1"/>
+
+        <!-- Zone de glissement pour ouvrir le tiroir -->
+        <LinearLayout
+            android:id="@+id/drag_handle"
+            android:layout_width="match_parent"
+            android:layout_height="80dp"
+            android:gravity="center"
+            android:orientation="vertical">
+
+            <View
+                android:layout_width="40dp"
+                android:layout_height="4dp"
+                android:background="#80FFFFFF"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="↑ Glissez vers le haut"
+                android:textColor="#80FFFFFF"
+                android:textSize="13sp"/>
+        </LinearLayout>
     </LinearLayout>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-    <ImageView
-        android:id="@+id/toggle_btn"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
-        android:layout_gravity="center_horizontal"
-        android:src="@drawable/ic_drawer"
-        android:layout_marginBottom="16dp"
-        android:tint="#FFFFFF"/>
-
+    <!-- ===== TIROIR D'APPLICATIONS — PLEIN ÉCRAN ===== -->
     <LinearLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#E6000000"
+        android:background="#F0000000"
         android:elevation="24dp"
+        android:translationY="100%"
         android:visibility="gone">
 
+        <!-- Barre de recherche -->
         <EditText
             android:id="@+id/search_input"
             android:layout_width="match_parent"
-            android:layout_height="45dp"
+            android:layout_height="48dp"
             android:hint="🔍 Rechercher une application..."
             android:textColor="#FFFFFF"
             android:textColorHint="#80FFFFFF"
@@ -70,22 +92,26 @@
             android:layout_margin="12dp"
             android:inputType="textFilter"/>
 
-        <TextView
-            android:id="@+id/status_text"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Chargement..."
-            android:textColor="#B0FFFFFF"
-            android:gravity="center"
-            android:padding="8dp"/>
-
+        <!-- Grille des applications -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/apps_recycler"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingHorizontal="8dp"/>
+            android:paddingHorizontal="8dp"
+            android:clipToPadding="false"/>
+
+        <!-- Indicateur de fermeture -->
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="↓ Glissez vers le bas pour fermer"
+            android:textColor="#60FFFFFF"
+            android:textSize="12sp"
+            android:gravity="center"
+            android:padding="8dp"/>
     </LinearLayout>
 
+    <!-- Overlay permissions -->
     <LinearLayout
         android:id="@+id/permission_overlay"
         android:layout_width="match_parent"
@@ -109,7 +135,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pour afficher les messages au-dessus de toutes les applications :\n\n• ✅ Accès aux notifications\n• ✅ Afficher par-dessus les autres apps\n• ✅ Recevoir les SMS"
+            android:text="Pour afficher les messages au-dessus de toutes les applications :"
             android:textSize="15sp"
             android:textColor="#E0FFFFFF"
             android:gravity="center"
@@ -125,4 +151,4 @@
             android:textColor="#FFFFFF"/>
     </LinearLayout>
 
-</LinearLayout>
+</FrameLayout>

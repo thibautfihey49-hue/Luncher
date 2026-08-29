@@ -1,6 +1,8 @@
 package com.luncher
 
 import android.Manifest
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -17,7 +19,10 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.MotionEvent
 import android.view.View
+import android.view.ViewGroup
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -28,6 +33,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
@@ -39,18 +45,18 @@ import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.abs
 
 class LauncherActivity : AppCompatActivity() {
     
     private lateinit var heureTexte: TextView
     private lateinit var dateTexte: TextView
-    private lateinit var toggleBtn: ImageView
+    private lateinit var dragHandle: View
     private lateinit var drawerLayout: LinearLayout
     private lateinit var searchInput: EditText
     private lateinit var appsRecycler: RecyclerView
-    private lateinit var rootLayout: LinearLayout
+    private lateinit var rootLayout: View
     private lateinit var timeContainer: LinearLayout
-    private lateinit var statusText: TextView
     private lateinit var permissionOverlay: LinearLayout
     
     private lateinit var adapter: AppAdapter
@@ -61,12 +67,15 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var timeRunnable: Runnable
     private var loadJob: Job? = null
     private val isLoaded = AtomicBoolean(false)
+    
+    private var startY = 0f
+    private var drawerOffset = 0f
+    private val screenHeight by lazy { resources.displayMetrics.heightPixels.toFloat() }
+    private val touchThreshold = 80f
 
     private val PREFS_NAME = "LuncherPrefs"
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
     private val KEY_TEXT_COLOR = "text_color"
-    private val KEY_HOUR_X = "hour_x"
-    private val KEY_HOUR_Y = "hour_y"
     private val KEY_PERMISSIONS_DONE = "permissions_done"
 
     private val colorNames = listOf(
@@ -100,9 +109,7 @@ class LauncherActivity : AppCompatActivity() {
                 Toast.makeText(this, "⚠️ Refusé : ${it.key}", Toast.LENGTH_LONG).show()
             }
         }
-        if (allGranted) {
-            checkAllPermissionsAndProceed()
-        }
+        if (allGranted) checkAllPermissionsAndProceed()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -111,29 +118,23 @@ class LauncherActivity : AppCompatActivity() {
         
         heureTexte = findViewById(R.id.heure_texte)
         dateTexte = findViewById(R.id.date_texte)
-        toggleBtn = findViewById(R.id.toggle_btn)
+        dragHandle = findViewById(R.id.drag_handle)
         drawerLayout = findViewById(R.id.drawer_layout)
         searchInput = findViewById(R.id.search_input)
         appsRecycler = findViewById(R.id.apps_recycler)
         rootLayout = findViewById(R.id.root_layout)
         timeContainer = findViewById(R.id.time_container)
-        statusText = findViewById(R.id.status_text)
         permissionOverlay = findViewById(R.id.permission_overlay)
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
 
         setupRecycler()
         setupSearch()
-        toggleBtn.setOnClickListener { toggleDrawer() }
-        drawerLayout.visibility = View.GONE
-        toggleBtn.rotation = 0f
-
+        setupDrawerGestures()
         setupDateTime()
-        setupDraggableTime()
         setupLongPressActions()
         loadSavedWallpaper()
         loadTextColor()
-        loadTimePosition()
         
         if (!prefs.getBoolean(KEY_PERMISSIONS_DONE, false)) {
             showPermissionScreen()
@@ -142,9 +143,79 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupDrawerGestures() {
+        // Glisser vers le haut sur la poignée = OUVRIR
+        dragHandle.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> startY = event.rawY
+                MotionEvent.ACTION_UP -> {
+                    if (startY - event.rawY > touchThreshold) {
+                        openDrawer()
+                    }
+                }
+            }
+            true
+        }
+
+        // Glisser vers le bas dans le tiroir = FERMER
+        drawerLayout.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.rawY
+                    drawerOffset = 0f
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isDrawerOpen) {
+                        val deltaY = event.rawY - startY
+                        if (deltaY > 0) { // Glissement vers le bas
+                            drawerOffset = deltaY
+                            drawerLayout.translationY = deltaY
+                        }
+                    }
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (drawerOffset > touchThreshold) {
+                        closeDrawer()
+                    } else if (isDrawerOpen) {
+                        resetDrawerPosition()
+                    }
+                    drawerOffset = 0f
+                }
+            }
+            true
+        }
+    }
+
+    private fun openDrawer() {
+        isDrawerOpen = true
+        drawerLayout.visibility = View.VISIBLE
+        ObjectAnimator.ofFloat(drawerLayout, View.TRANSLATION_Y, 0f).apply {
+            duration = 300
+            interpolator = DecelerateInterpolator(1.5f)
+            start()
+        }
+    }
+
+    private fun closeDrawer() {
+        isDrawerOpen = false
+        ObjectAnimator.ofFloat(drawerLayout, View.TRANSLATION_Y, screenHeight).apply {
+            duration = 300
+            interpolator = DecelerateInterpolator(1.2f)
+            start()
+            addListener(onEnd = { drawerLayout.visibility = View.GONE })
+        }
+    }
+
+    private fun resetDrawerPosition() {
+        ObjectAnimator.ofFloat(drawerLayout, View.TRANSLATION_Y, 0f).apply {
+            duration = 150
+            start()
+        }
+    }
+
     private fun checkAllPermissionsAndProceed() {
         if (!isNotificationListenerEnabled()) {
-            Toast.makeText(this, "👉 ÉTAPE 1/3 : Accès aux notifications", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 ÉTAPE 1/2 : Accès aux notifications", Toast.LENGTH_LONG).show()
             startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
             handler.postDelayed({ checkNotificationListener() }, 2000)
         } else {
@@ -162,12 +233,10 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun checkOverlayPermissionStep() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 ÉTAPE 2/3 : Autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 ÉTAPE 2/2 : Autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
             handler.postDelayed({ 
-                if (Settings.canDrawOverlays(this)) {
-                    hidePermissionScreen()
-                }
+                if (Settings.canDrawOverlays(this)) hidePermissionScreen()
             }, 2000)
         } else {
             hidePermissionScreen()
@@ -176,12 +245,9 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun checkOverlayPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 Accorder l'autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
         }
-        if (!isLoaded.get()) {
-            loadAllApps()
-        }
+        if (!isLoaded.get()) loadAllApps()
     }
 
     private fun showPermissionScreen() {
@@ -194,9 +260,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun hidePermissionScreen() {
         permissionOverlay.visibility = View.GONE
         prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
-        if (!isLoaded.get()) {
-            loadAllApps()
-        }
+        if (!isLoaded.get()) loadAllApps()
     }
 
     private fun requestAllPermissionsSequentially() {
@@ -229,42 +293,6 @@ class LauncherActivity : AppCompatActivity() {
     private fun isNotificationListenerEnabled(): Boolean {
         val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
         return enabled?.contains(packageName) == true
-    }
-
-    private fun setupDraggableTime() {
-        var dX = 0f
-        var dY = 0f
-        timeContainer.setOnTouchListener { view, event ->
-            when (event.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> {
-                    dX = view.x - event.rawX
-                    dY = view.y - event.rawY
-                    true
-                }
-                android.view.MotionEvent.ACTION_MOVE -> {
-                    view.x = event.rawX + dX
-                    view.y = event.rawY + dY
-                    true
-                }
-                android.view.MotionEvent.ACTION_UP -> {
-                    prefs.edit {
-                        putFloat(KEY_HOUR_X, view.x)
-                        putFloat(KEY_HOUR_Y, view.y)
-                    }
-                    true
-                }
-                else -> false
-            }
-        }
-    }
-    
-    private fun loadTimePosition() {
-        val x = prefs.getFloat(KEY_HOUR_X, Float.NaN)
-        val y = prefs.getFloat(KEY_HOUR_Y, Float.NaN)
-        if (!x.isNaN() && !y.isNaN()) {
-            timeContainer.x = x
-            timeContainer.y = y
-        }
     }
 
     private fun setupLongPressActions() {
@@ -358,7 +386,7 @@ class LauncherActivity : AppCompatActivity() {
             }
         }
         appsRecycler.adapter = adapter
-        appsRecycler.layoutManager = LinearLayoutManager(this)
+        appsRecycler.layoutManager = GridLayoutManager(this, 4)
     }
 
     private fun setupSearch() {
@@ -371,24 +399,16 @@ class LauncherActivity : AppCompatActivity() {
         })
     }
 
-    private fun toggleDrawer() {
-        isDrawerOpen = !isDrawerOpen
-        drawerLayout.visibility = if (isDrawerOpen) View.VISIBLE else View.GONE
-        toggleBtn.rotation = if (isDrawerOpen) 180f else 0f
-    }
-
     private fun loadAllApps() {
         if (isLoaded.get()) return
         loadJob?.cancel()
         
-        statusText.text = "🔄 Chargement des applications..."
         isLoaded.set(false)
         
         loadJob = CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            // ✅ OPTIMISATION: Utilisation de MATCH_DEFAULT_ONLY au lieu de MATCH_ALL (beaucoup plus rapide)
             val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_DEFAULT_ONLY)
             
@@ -407,20 +427,15 @@ class LauncherActivity : AppCompatActivity() {
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
                     
                     apps.add(AppInfo(name, packageName, icon, isSystemApp))
-                } catch (e: Exception) {
-                    // Ignorer silencieusement les erreurs
-                }
+                } catch (e: Exception) { }
             }
             
-            // ✅ TRI SIMPLE PAR NOM — plus rapide
             val finalList = apps.sortedWith(compareBy({ it.name.lowercase() }, { it.packageName }))
             
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
-                statusText.text = "✅ ${finalList.size} applications chargées"
                 isLoaded.set(true)
-                handler.postDelayed({ statusText.visibility = View.GONE }, 2500)
             }
         }
     }
