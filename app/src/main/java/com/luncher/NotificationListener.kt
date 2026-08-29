@@ -3,11 +3,10 @@ package com.luncher
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.Service
+import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.os.IBinder
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
 import androidx.core.app.NotificationCompat
@@ -24,41 +23,30 @@ class NotificationListener : NotificationListenerService() {
         
         private var instance: NotificationListener? = null
         fun getInstance(): NotificationListener? = instance
-        
-        fun getServiceContext(): Context? = instance?.applicationContext
     }
 
     override fun onCreate() {
         super.onCreate()
         instance = this
-        startForegroundService()
+        createNotificationChannel()
     }
 
-    override fun onBind(intent: Intent?): IBinder? = null
+    override fun onBind(intent: Intent?) = super.onBind(intent)
 
-    private fun startForegroundService() {
-        val CHANNEL_ID = "Luncher_Notifications_Service"
+    private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Service Notifications Luncher",
-                NotificationManager.IMPORTANCE_LOW
+                "LUNCHER_MESSAGES",
+                "Messages Luncher",
+                NotificationManager.IMPORTANCE_HIGH
             ).apply {
-                description = "Garde les notifications visibles par-dessus toutes les applications"
+                description = "Notifications des messages SMS, WhatsApp et Gmail"
+                enableVibration(true)
+                setShowBadge(true)
             }
-            val nm = getSystemService(NotificationManager::class.java)
+            val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
             nm.createNotificationChannel(channel)
         }
-        
-        val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle("Luncher actif")
-            .setContentText("Les notifications s'affichent par-dessus toutes les applications")
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
-            .build()
-        
-        startForeground(1001, notification)
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
@@ -80,35 +68,78 @@ class NotificationListener : NotificationListenerService() {
             ?: "Sans expéditeur"
             
         val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() 
-            ?: extras.getCharSequence(Notification.EXTRA_TEXT_LINES)?.toString()
             ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
             ?: "(Message vide)"
-        
-        val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString() ?: ""
-        val fullContent = when {
-            text.isNotEmpty() && subText.isNotEmpty() -> "$text\n$subText"
-            else -> text
-        }
         
         val message = Message(
             id = sbn.key,
             type = type,
             sender = title,
-            content = fullContent,
+            content = text,
             time = sbn.postTime,
             packageName = pkg
         )
         
-        // ✅ AJOUTE IMMÉDIATEMENT LE MESSAGE → s'affiche tout de suite !
-        addMessage(message)
-    }
-    
-    private fun addMessage(message: Message) {
+        // ✅ 1. Ajoute à la liste
         messagesFlow.value = listOf(message) + messagesFlow.value
+        
+        // ✅ 2. Affiche une NOTIFICATION SYSTÈME (fiable à 100%)
+        showSystemNotification(message)
+        
+        // ✅ 3. OUVRE LA POPUP DIRECTEMENT DEVANT TOUT !
+        try {
+            MessagePopupActivity.show(this, message)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
     }
     
-    fun removeMessage(id: String) {
-        messagesFlow.value = messagesFlow.value.filter { it.id != id }
+    private fun showSystemNotification(message: Message) {
+        val nm = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        
+        // ✅ Intent pour OUVRIR LA POPUP quand on clique sur la notification
+        val intent = Intent(this, MessagePopupActivity::class.java).apply {
+            putExtra(MessagePopupActivity.EXTRA_TYPE, message.type)
+            putExtra(MessagePopupActivity.EXTRA_SENDER, message.sender)
+            putExtra(MessagePopupActivity.EXTRA_CONTENT, message.content)
+            putExtra(MessagePopupActivity.EXTRA_PACKAGE, message.packageName)
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            message.id.hashCode(),
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        
+        val iconRes = when (message.type) {
+            "SMS" -> android.R.drawable.ic_dialog_email
+            "WHATSAPP" -> android.R.drawable.ic_menu_call
+            "GMAIL" -> android.R.drawable.ic_dialog_info
+            else -> android.R.drawable.ic_dialog_email
+        }
+        
+        val titleText = when(message.type) {
+            "SMS" -> "📩 SMS"
+            "WHATSAPP" -> "💬 WhatsApp"
+            "GMAIL" -> "📧 Gmail"
+            else -> "📬 Message"
+        }
+        
+        val notification = NotificationCompat.Builder(this, "LUNCHER_MESSAGES")
+            .setSmallIcon(iconRes)
+            .setContentTitle("$titleText : ${message.sender}")
+            .setContentText(message.content)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(message.content))
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setDefaults(Notification.DEFAULT_SOUND or Notification.DEFAULT_VIBRATE)
+            .build()
+        
+        nm.notify(message.id.hashCode(), notification)
     }
 
     override fun onDestroy() {

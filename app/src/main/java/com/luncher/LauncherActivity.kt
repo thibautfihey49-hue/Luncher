@@ -9,7 +9,6 @@ import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
-import android.graphics.PixelFormat
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
@@ -22,9 +21,7 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.Gravity
-import android.view.LayoutInflater
 import android.view.View
-import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -64,12 +61,6 @@ class LauncherActivity : AppCompatActivity() {
     private var allApps = listOf<AppInfo>()
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timeRunnable: Runnable
-    
-    private var notificationsContainer: View? = null
-    private var notificationAdapter: NotificationAdapter? = null
-    private val notificationsList = mutableListOf<Message>()
-    private lateinit var windowManager: WindowManager
-    private var isWindowAttached = false
 
     private val PREFS_NAME = "LuncherPrefs"
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
@@ -130,7 +121,6 @@ class LauncherActivity : AppCompatActivity() {
         permissionOverlay = findViewById(R.id.permission_overlay)
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
-        windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
 
         setupRecycler()
         setupSearch()
@@ -149,8 +139,6 @@ class LauncherActivity : AppCompatActivity() {
             showPermissionScreen()
         } else {
             loadAllApps()
-            setupMessagesObserver()
-            ensureNotificationWindow()
         }
     }
 
@@ -165,8 +153,6 @@ class LauncherActivity : AppCompatActivity() {
         permissionOverlay.visibility = View.GONE
         prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
         loadAllApps()
-        setupMessagesObserver()
-        ensureNotificationWindow()
     }
 
     private fun requestAllPermissionsSequentially() {
@@ -193,25 +179,18 @@ class LauncherActivity : AppCompatActivity() {
         
         if (permissionsNeeded.isNotEmpty()) {
             requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
+            return
         }
         
         if (!isNotificationListenerEnabled()) {
-            Toast.makeText(this, "👉 ÉTAPE 1/3 : Accès aux notifications", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 ÉTAPE 1/2 : Accès aux notifications", Toast.LENGTH_LONG).show()
             val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
-            startActivity(intent)
-        } else if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 ÉTAPE 2/3 : Afficher par-dessus les applications", Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
-            startActivity(intent)
-        } else if (!hasUsageStatsPermission()) {
-            Toast.makeText(this, "👉 ÉTAPE 3/3 : Accès aux infos d'utilisation", Toast.LENGTH_LONG).show()
-            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             startActivity(intent)
         } else {
             hidePermissionScreen()
         }
         
-        handler.postDelayed({ checkAllPermissionsAndProceed() }, 3000)
+        handler.postDelayed({ checkAllPermissionsAndProceed() }, 2500)
     }
 
     private fun hasUsageStatsPermission(): Boolean {
@@ -227,19 +206,15 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun checkAllPermissionsAndProceed() {
         val hasNotifAccess = isNotificationListenerEnabled()
-        val hasOverlay = Settings.canDrawOverlays(this)
-        val hasUsageAccess = hasUsageStatsPermission()
         
-        if (hasNotifAccess && hasOverlay && hasUsageAccess) {
-            Toast.makeText(this, "✅ TOUTES les permissions accordées !", Toast.LENGTH_LONG).show()
+        if (hasNotifAccess) {
+            Toast.makeText(this, "✅ Toutes les permissions accordées !", Toast.LENGTH_LONG).show()
             hidePermissionScreen()
         } else {
             val missing = mutableListOf<String>()
-            if (!hasNotifAccess) missing.add("• Accès notifications")
-            if (!hasOverlay) missing.add("• Affichage par-dessus")
-            if (!hasUsageAccess) missing.add("• Accès liste des applications")
+            if (!hasNotifAccess) missing.add("• Accès aux notifications")
             if (missing.isNotEmpty()) {
-                Toast.makeText(this, "⚠️ Il manque :\n${missing.joinToString("\n")}\n\nAppuyez à nouveau sur le bouton", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "⚠️ Il manque :\n${missing.joinToString("\n")}\n\nAppuyez à nouveau", Toast.LENGTH_LONG).show()
             }
         }
     }
@@ -247,75 +222,6 @@ class LauncherActivity : AppCompatActivity() {
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
         return enabledListeners?.contains(packageName) == true
-    }
-
-    private fun setupMessagesObserver() {
-        CoroutineScope(Dispatchers.Main).launch {
-            NotificationListener.messagesFlow.collect { messages ->
-                updateNotifications(messages)
-            }
-        }
-    }
-
-    private fun updateNotifications(messages: List<Message>) {
-        notificationsList.clear()
-        notificationsList.addAll(messages)
-        ensureNotificationWindow()
-        notificationAdapter?.notifyDataSetChanged()
-    }
-
-    private fun ensureNotificationWindow() {
-        if (!Settings.canDrawOverlays(this)) return
-        
-        if (notificationsContainer == null) {
-            val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            notificationsContainer = inflater.inflate(R.layout.popup_notifications_container, null)
-            
-            val recyclerView = notificationsContainer!!.findViewById<RecyclerView>(R.id.notifications_list)
-            notificationAdapter = NotificationAdapter(this, notificationsList) { id ->
-                removeNotification(id)
-            }
-            recyclerView.adapter = notificationAdapter
-            recyclerView.layoutManager = LinearLayoutManager(this)
-        }
-        
-        if (!isWindowAttached) {
-            val layoutParams = WindowManager.LayoutParams(
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                } else {
-                    @Suppress("DEPRECATION")
-                    WindowManager.LayoutParams.TYPE_PHONE
-                },
-                WindowManager.LayoutParams.MATCH_PARENT,
-                WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
-                PixelFormat.TRANSLUCENT
-            )
-            layoutParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-            layoutParams.width = (resources.displayMetrics.widthPixels * 0.96).toInt()
-            layoutParams.y = (16 * resources.displayMetrics.density).toInt()
-
-            try {
-                windowManager.addView(notificationsContainer, layoutParams)
-                isWindowAttached = true
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
-        } else {
-            try {
-                val params = notificationsContainer!!.layoutParams as WindowManager.LayoutParams
-                params.width = (resources.displayMetrics.widthPixels * 0.96).toInt()
-                params.y = (16 * resources.displayMetrics.density).toInt()
-                windowManager.updateViewLayout(notificationsContainer, params)
-            } catch (e: Exception) {}
-        }
-    }
-
-    private fun removeNotification(id: String) {
-        NotificationListener.messagesFlow.value = NotificationListener.messagesFlow.value.filter { it.id != id }
     }
 
     private fun setupDraggableTime() {
@@ -479,7 +385,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun loadAllApps() {
-        statusText.text = "🔄 Chargement complet des applications..."
+        statusText.text = "🔄 Chargement des applications..."
         
         CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
@@ -488,7 +394,7 @@ class LauncherActivity : AppCompatActivity() {
             val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_ALL)
             
-            Log.d("LUNCHER", "Résultats queryIntentActivities: ${resolveInfos.size}")
+            Log.d("LUNCHER", "Apps trouvées: ${resolveInfos.size}")
             
             for (ri in resolveInfos) {
                 try {
@@ -506,7 +412,7 @@ class LauncherActivity : AppCompatActivity() {
                     
                     apps.add(AppInfo(name, packageName, icon, isSystemApp && !isUpdatedSystemApp))
                 } catch (e: Exception) {
-                    Log.e("LUNCHER", "Erreur chargement app", e)
+                    Log.e("LUNCHER", "Erreur", e)
                 }
             }
             
@@ -514,13 +420,11 @@ class LauncherActivity : AppCompatActivity() {
             val systemApps = apps.filter { it.isSystemApp }.sortedBy { it.name.lowercase() }
             val finalList = userApps + systemApps
             
-            Log.d("LUNCHER", "Total: ${finalList.size} | Utilisateur: ${userApps.size} | Système: ${systemApps.size}")
-            
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
-                statusText.text = "✅ ${finalList.size} applications trouvées\n📱 ${userApps.size} installées par vous"
-                handler.postDelayed({ statusText.visibility = View.GONE }, 5000)
+                statusText.text = "✅ ${finalList.size} applications\n📱 ${userApps.size} installées par vous"
+                handler.postDelayed({ statusText.visibility = View.GONE }, 4000)
             }
         }
     }
@@ -528,13 +432,5 @@ class LauncherActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(timeRunnable)
-        notificationsContainer?.let {
-            try { 
-                if (isWindowAttached) {
-                    windowManager.removeView(it)
-                    isWindowAttached = false
-                }
-            } catch (_: Exception) {}
-        }
     }
 }
