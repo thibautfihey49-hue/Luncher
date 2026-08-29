@@ -3,7 +3,6 @@ package com.luncher
 import android.Manifest
 import android.animation.ObjectAnimator
 import android.animation.AnimatorListenerAdapter
-import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
@@ -112,10 +111,7 @@ class LauncherActivity : AppCompatActivity() {
     ) { permissions ->
         var allGranted = true
         permissions.entries.forEach { 
-            if (!it.value) {
-                allGranted = false
-                Toast.makeText(this, "⚠️ Refusé : ${it.key}", Toast.LENGTH_LONG).show()
-            }
+            if (!it.value) allGranted = false
         }
         if (allGranted) checkAllPermissionsAndProceed()
     }
@@ -284,7 +280,6 @@ class LauncherActivity : AppCompatActivity() {
     private fun checkNotificationListener() {
         if (isNotificationListenerEnabled()) {
             checkOverlayPermissionStep()
-        } else {
         }
     }
 
@@ -439,10 +434,7 @@ class LauncherActivity : AppCompatActivity() {
             try {
                 val launchIntent = packageManager.getLaunchIntentForPackage(app.packageName)
                 if (launchIntent != null) startActivity(launchIntent)
-                else Toast.makeText(this, "Impossible d'ouvrir ${app.name}", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) {
-                Toast.makeText(this, "Erreur : ${e.message}", Toast.LENGTH_SHORT).show()
-            }
+            } catch (e: Exception) { }
         }
         appsRecycler.adapter = adapter
         appsRecycler.layoutManager = GridLayoutManager(this, 4)
@@ -504,7 +496,6 @@ class LauncherActivity : AppCompatActivity() {
                 isLoaded.set(true)
             }
         }
-    }
     }
 
     override fun onDestroy() {
