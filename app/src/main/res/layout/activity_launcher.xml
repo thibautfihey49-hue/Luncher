@@ -6,12 +6,19 @@
         <TextView android:id="@+id/timeView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="12:00" android:textSize="64sp" android:fontFamily="@font/dancingscript" android:textColor="@color/white" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
         <TextView android:id="@+id/dateView" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Samedi 29 aout" android:textSize="20sp" android:fontFamily="@font/dancingscript" android:textColor="@color/white" android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@id/timeView" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
-    <View android:id="@+id/drawerHandle" android:layout_width="60dp" android:layout_height="5dp" android:background="@drawable/handle_bg" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" android:layout_marginBottom="12dp" />
-    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/drawerContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#00000000" android:visibility="gone">
-        <View android:id="@+id/drawerSearchHandle" android:layout_width="match_parent" android:layout_height="90dp" android:background="@android:color/transparent" app:layout_constraintTop_toTopOf="parent" />
+    <View android:id="@+id/drawerHandle" android:layout_width="80dp" android:layout_height="24dp" android:background="@drawable/handle_bg" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" android:layout_marginBottom="20dp" />
+
+    <!-- Drawer avec fond = wallpaper flou -->
+    <androidx.constraintlayout.widget.ConstraintLayout android:id="@+id/drawerContainer" android:layout_width="match_parent" android:layout_height="match_parent" android:visibility="gone">
+        <!-- Fond = meme wallpaper + blur -->
+        <ImageView android:id="@+id/drawerWallpaperView" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="centerCrop" />
+        <View android:layout_width="match_parent" android:layout_height="match_parent" android:background="#CC000000" />
+        <!-- blur effect via View (dim + léger flou system) -->
+        <View android:id="@+id/drawerSearchHandle" android:layout_width="match_parent" android:layout_height="120dp" android:background="@android:color/transparent" app:layout_constraintTop_toTopOf="parent" />
         <EditText android:id="@+id/searchBar" android:layout_width="0dp" android:layout_height="52dp" android:layout_margin="16dp" android:hint="@string/search_hint" android:background="@drawable/search_bg" android:paddingHorizontal="18dp" android:textColor="#FFFFFF" android:textColorHint="#AAFFFFFF" android:singleLine="true" app:layout_constraintTop_toTopOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
         <androidx.recyclerview.widget.RecyclerView android:id="@+id/appRecycler" android:layout_width="0dp" android:layout_height="0dp" app:layout_constraintTop_toBottomOf="@id/searchBar" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent" />
     </androidx.constraintlayout.widget.ConstraintLayout>
+
     <LinearLayout android:id="@+id/permissionOverlay" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:gravity="center" android:background="#EE000000" android:padding="24dp" android:visibility="gone">
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/permission_title" android:textSize="28sp" android:textColor="@color/white" android:fontFamily="@font/dancingscript" />
         <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/permission_desc" android:textColor="#CCCCCC" android:layout_marginTop="12dp" android:gravity="center" />
@@ -19,3 +26,4 @@
         <com.google.android.material.button.MaterialButton android:id="@+id/btnContinue" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/continue_btn" style="@style/Widget.MaterialComponents.Button.OutlinedButton" android:layout_marginTop="12dp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>
+
