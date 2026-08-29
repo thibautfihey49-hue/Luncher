@@ -1,53 +1,30 @@
 package com.luncher.data
-
 import android.app.Notification
-import android.os.Build
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
-import com.luncher.ui.FloatingWindowService
-import java.text.SimpleDateFormat
-import java.util.*
-
+object NotificationRepository {
+    data class FloatingNotif(val id: Int, val packageName: String, val appName: String, val title: String, val content: String, val time: Long, val notification: Notification, val sbnKey: String)
+    val notifs = mutableListOf<FloatingNotif>()
+    var listener: (() -> Unit)? = null
+}
 class NotificationListener : NotificationListenerService() {
-    private val watchedApps = listOf(
-        "com.whatsapp",
-        "com.google.android.gm",
-        "com.android.mms"
-    )
-
-    override fun onNotificationPosted(sbn: StatusBarNotification) {
-        super.onNotificationPosted(sbn)
-        val pkg = sbn.packageName
-        if (!watchedApps.contains(pkg)) return
-        
-        val notification = sbn.notification
-        val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: "Message"
-        val text = notification.extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-        
-        val appName = when (pkg) {
-            "com.whatsapp" -> "WhatsApp"
-            "com.google.android.gm" -> "Gmail"
-            "com.android.mms" -> "SMS"
-            else -> pkg
-        }
-        
-        val iconRes = when (pkg) {
-            "com.whatsapp" -> android.R.drawable.ic_menu_call
-            "com.google.android.gm" -> android.R.drawable.ic_dialog_email
-            else -> android.R.drawable.ic_dialog_info
-        }
-        
-        val timeStr = SimpleDateFormat("HH:mm", Locale.FRANCE).format(Date())
-        
-        val message = MessageItem(
-            id = System.currentTimeMillis(),
-            appName = appName,
-            packageName = pkg,
-            sender = title,
-            content = text,
-            time = timeStr,
-            icon = iconRes
-        )
-        FloatingWindowService.showMessage(this, message)
+    private val allowedPkgs = setOf("com.google.android.gm","com.whatsapp","com.whatsapp.w4b","com.google.android.apps.messaging","com.android.mms","com.samsung.android.messaging")
+    override fun onNotificationPosted(sbn: StatusBarNotification?) {
+        if (sbn == null) return
+        if (sbn.isOngoing) return
+        val extras = sbn.notification.extras
+        val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
+        val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: ""
+        if (title.isBlank() && text.isBlank()) return
+        val isMessage = sbn.notification.category == Notification.CATEGORY_MESSAGE || sbn.packageName in allowedPkgs
+        if (!isMessage && sbn.packageName !in allowedPkgs) { if (sbn.notification.category != Notification.CATEGORY_MESSAGE) return }
+        val appName = try { val pm = packageManager; pm.getApplicationLabel(pm.getApplicationInfo(sbn.packageName, 0)).toString() } catch (e: Exception) { sbn.packageName }
+        val floating = NotificationRepository.FloatingNotif(sbn.id, sbn.packageName, appName, title, text, sbn.postTime, sbn.notification, sbn.key)
+        NotificationRepository.notifs.removeAll { it.sbnKey == sbn.key }
+        NotificationRepository.notifs.add(0, floating)
+        if (NotificationRepository.notifs.size > 20) NotificationRepository.notifs.removeAt(NotificationRepository.notifs.size-1)
+        NotificationRepository.listener?.invoke()
+        FloatingNotificationService.show(this)
     }
+    override fun onNotificationRemoved(sbn: StatusBarNotification?) { if (sbn == null) return; NotificationRepository.notifs.removeAll { it.sbnKey == sbn.key }; NotificationRepository.listener?.invoke(); if (NotificationRepository.notifs.isEmpty()) FloatingNotificationService.hide(this) }
 }

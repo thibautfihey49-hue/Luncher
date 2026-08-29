@@ -1,5 +1,3 @@
-#!/bin/sh
-APP_HOME=$( cd "$( dirname "$0" )" && pwd )
-CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
-if [ -z "$JAVA_HOME" ] ; then JAVA_EXECUTABLE=java; else JAVA_EXECUTABLE="$JAVA_HOME/bin/java"; fi
-exec "$JAVA_EXECUTABLE" -Xmx64m -Xms64m -classpath "$CLASSPATH" -Dorg.gradle.appname=$(basename "$0") org.gradle.wrapper.GradleWrapperMain "$@"
+#!/usr/bin/env sh
+set -e
+if command -v gradle >/dev/null 2>&1; then exec gradle "$@"; else echo "Use Android Studio"; exit 1; fi
