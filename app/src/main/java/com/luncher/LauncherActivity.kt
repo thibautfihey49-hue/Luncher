@@ -165,28 +165,22 @@ class LauncherActivity : AppCompatActivity() {
                     timeViewStartX = view.x
                     timeViewStartY = view.y
                 }
-                
                 MotionEvent.ACTION_MOVE -> {
                     val deltaX = abs(event.rawX - timeStartX)
                     val deltaY = abs(event.rawY - timeStartY)
-                    
                     if (deltaX > 10 || deltaY > 10) {
                         hasMovedDuringPress = true
-                        
                         if (!isDraggingTime && System.currentTimeMillis() - pressStartTime >= LONG_PRESS_THRESHOLD) {
                             isDraggingTime = true
                         }
-                        
                         if (isDraggingTime) {
                             view.x = timeViewStartX + (event.rawX - timeStartX)
                             view.y = timeViewStartY + (event.rawY - timeStartY)
                         }
                     }
                 }
-                
                 MotionEvent.ACTION_UP -> {
                     val pressDuration = System.currentTimeMillis() - pressStartTime
-                    
                     when {
                         isDraggingTime -> {
                             prefs.edit {
@@ -263,7 +257,7 @@ class LauncherActivity : AppCompatActivity() {
             duration = 300
             interpolator = DecelerateInterpolator(1.2f)
             addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: android.animation.Animator)
+                override fun onAnimationEnd(animation: android.animation.Animator) {
                     drawerLayout.visibility = View.GONE
                 }
             })
@@ -330,7 +324,6 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun requestAllPermissionsSequentially() {
         val permissionsNeeded = mutableListOf<String>()
-        
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED)
                 permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
@@ -340,18 +333,15 @@ class LauncherActivity : AppCompatActivity() {
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                 permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-        
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
             permissionsNeeded.add(Manifest.permission.READ_SMS)
             permissionsNeeded.add(Manifest.permission.RECEIVE_SMS)
             permissionsNeeded.add(Manifest.permission.SEND_SMS)
         }
-        
         if (permissionsNeeded.isNotEmpty()) {
             requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
             return
         }
-        
         checkAllPermissionsAndProceed()
     }
 
@@ -474,36 +464,26 @@ class LauncherActivity : AppCompatActivity() {
     private fun loadAllApps() {
         if (isLoaded.get()) return
         loadJob?.cancel()
-        
         isLoaded.set(false)
-        
         loadJob = CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
-            
             val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_DEFAULT_ONLY)
-            
             val selfPackage = packageName
-            
             for (ri in resolveInfos) {
                 try {
                     val packageName = ri.activityInfo.packageName
                     if (packageName == selfPackage) continue
-                    
                     val appInfo = pm.getApplicationInfo(packageName, 0)
                     val name = appInfo.loadLabel(pm).toString().trim()
                     if (name.isEmpty() || name.startsWith(".")) continue
-                    
                     val icon = appInfo.loadIcon(pm)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    
                     apps.add(AppInfo(name, packageName, icon, isSystemApp))
                 } catch (e: Exception) { }
             }
-            
             val finalList = apps.sortedWith(compareBy({ it.name.lowercase() }, { it.packageName }))
-            
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
