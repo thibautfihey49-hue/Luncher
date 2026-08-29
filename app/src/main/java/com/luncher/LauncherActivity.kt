@@ -2,11 +2,9 @@ package com.luncher
 
 import android.Manifest
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
-import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -21,11 +19,9 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.view.MotionEvent
 import android.view.View
-import android.view.ViewGroup
 import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.EditText
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -34,18 +30,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.abs
 
 class LauncherActivity : AppCompatActivity() {
     
@@ -72,10 +65,21 @@ class LauncherActivity : AppCompatActivity() {
     private var drawerOffset = 0f
     private val screenHeight by lazy { resources.displayMetrics.heightPixels.toFloat() }
     private val touchThreshold = 80f
+    
+    private var isDraggingTime = false
+    private var timeStartX = 0f
+    private var timeStartY = 0f
+    private var timeViewStartX = 0f
+    private var timeViewStartY = 0f
+    private val LONG_PRESS_THRESHOLD = 500L // 500ms = appui long
+    private var pressStartTime = 0L
+    private var hasMovedDuringPress = false
 
     private val PREFS_NAME = "LuncherPrefs"
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
     private val KEY_TEXT_COLOR = "text_color"
+    private val KEY_HOUR_X = "hour_x"
+    private val KEY_HOUR_Y = "hour_y"
     private val KEY_PERMISSIONS_DONE = "permissions_done"
 
     private val colorNames = listOf(
@@ -132,9 +136,11 @@ class LauncherActivity : AppCompatActivity() {
         setupSearch()
         setupDrawerGestures()
         setupDateTime()
+        setupTimeGestures() // ✅ GESTURES HEURE/DATE
         setupLongPressActions()
         loadSavedWallpaper()
         loadTextColor()
+        loadTimePosition()
         
         if (!prefs.getBoolean(KEY_PERMISSIONS_DONE, false)) {
             showPermissionScreen()
@@ -143,8 +149,65 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    // ======================================================
+    // ✅ GESTURES : APPUI COURT = COULEUR | APPUI LONG = DÉPLACER
+    // ======================================================
+    private fun setupTimeGestures() {
+        timeContainer.setOnTouchListener { view, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    pressStartTime = System.currentTimeMillis()
+                    hasMovedDuringPress = false
+                    isDraggingTime = false
+                    timeStartX = event.rawX
+                    timeStartY = event.rawY
+                    timeViewStartX = view.x
+                    timeViewStartY = view.y
+                }
+                
+                MotionEvent.ACTION_MOVE -> {
+                    val deltaX = abs(event.rawX - timeStartX)
+                    val deltaY = abs(event.rawY - timeStartY)
+                    
+                    if (deltaX > 10 || deltaY > 10) {
+                        hasMovedDuringPress = true
+                        
+                        if (!isDraggingTime && System.currentTimeMillis() - pressStartTime >= LONG_PRESS_THRESHOLD) {
+                            isDraggingTime = true
+                        }
+                        
+                        if (isDraggingTime) {
+                            view.x = timeViewStartX + (event.rawX - timeStartX)
+                            view.y = timeViewStartY + (event.rawY - timeStartY)
+                        }
+                    }
+                }
+                
+                MotionEvent.ACTION_UP -> {
+                    val pressDuration = System.currentTimeMillis() - pressStartTime
+                    
+                    when {
+                        isDraggingTime -> {
+                            // ✅ Fin du déplacement : sauvegarder la position
+                            prefs.edit {
+                                putFloat(KEY_HOUR_X, view.x)
+                                putFloat(KEY_HOUR_Y, view.y)
+                            }
+                            Toast.makeText(this, "✅ Position sauvegardée", Toast.LENGTH_SHORT).show()
+                        }
+                        pressDuration < LONG_PRESS_THRESHOLD && !hasMovedDuringPress -> {
+                            // ✅ APPUI COURT → CHANGER COULEUR
+                            showColorPickerDialog()
+                        }
+                    }
+                    isDraggingTime = false
+                }
+            }
+            true
+        }
+    }
+
     private fun setupDrawerGestures() {
-        // Glisser vers le haut sur la poignée = OUVRIR
         dragHandle.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> startY = event.rawY
@@ -157,7 +220,6 @@ class LauncherActivity : AppCompatActivity() {
             true
         }
 
-        // Glisser vers le bas dans le tiroir = FERMER
         drawerLayout.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -167,7 +229,7 @@ class LauncherActivity : AppCompatActivity() {
                 MotionEvent.ACTION_MOVE -> {
                     if (isDrawerOpen) {
                         val deltaY = event.rawY - startY
-                        if (deltaY > 0) { // Glissement vers le bas
+                        if (deltaY > 0) {
                             drawerOffset = deltaY
                             drawerLayout.translationY = deltaY
                         }
@@ -297,8 +359,7 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun setupLongPressActions() {
         rootLayout.setOnLongClickListener { changerFondEcran(); true }
-        heureTexte.setOnLongClickListener { showColorPickerDialog(); true }
-        dateTexte.setOnLongClickListener { showColorPickerDialog(); true }
+        // ❌ Plus d'appui long sur l'heure — déplacé dans setupTimeGestures()
     }
 
     private fun showColorPickerDialog() {
@@ -321,6 +382,15 @@ class LauncherActivity : AppCompatActivity() {
         val savedColor = prefs.getInt(KEY_TEXT_COLOR, Color.WHITE)
         heureTexte.setTextColor(savedColor)
         dateTexte.setTextColor(savedColor)
+    }
+
+    private fun loadTimePosition() {
+        val x = prefs.getFloat(KEY_HOUR_X, Float.NaN)
+        val y = prefs.getFloat(KEY_HOUR_Y, Float.NaN)
+        if (!x.isNaN() && !y.isNaN()) {
+            timeContainer.x = x
+            timeContainer.y = y
+        }
     }
 
     private fun changerFondEcran() {
