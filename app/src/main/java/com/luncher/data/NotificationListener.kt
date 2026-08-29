@@ -23,7 +23,7 @@ class NotificationListener : NotificationListenerService() {
         val floating = NotificationRepository.FloatingNotif(sbn.id, sbn.packageName, appName, title, text, sbn.postTime, sbn.notification, sbn.key)
         NotificationRepository.notifs.removeAll { it.sbnKey == sbn.key }
         NotificationRepository.notifs.add(0, floating)
-        if (NotificationRepository.notifs.size > 30) NotificationRepository.notifs.removeAt(NotificationRepository.notifs.size-1)
+        if (NotificationRepository.notifs.size > 20) NotificationRepository.notifs.removeAt(NotificationRepository.notifs.size-1)
         NotificationRepository.listener?.invoke()
         FloatingNotificationService.show(this)
     }
