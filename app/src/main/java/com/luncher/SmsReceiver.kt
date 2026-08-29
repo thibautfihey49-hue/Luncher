@@ -33,7 +33,8 @@ class SmsReceiver : BroadcastReceiver() {
                     packageName = "com.android.mms"
                 )
                 
-                MessagePopupActivity.show(context, message)
+                FloatingWindowService.showMessage(context, message)
+                // ✅ PAS de abortBroadcast() → le SMS va aussi dans la boîte de réception
             }
         }
     }

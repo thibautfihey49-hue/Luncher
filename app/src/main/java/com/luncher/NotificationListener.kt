@@ -43,7 +43,7 @@ class NotificationListener : NotificationListenerService() {
             packageName = pkg
         )
         
-        MessagePopupActivity.show(this, message)
+        FloatingWindowService.showMessage(this, message)
         cancelNotification(sbn.key)
     }
 }

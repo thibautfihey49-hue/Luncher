@@ -109,7 +109,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pour recevoir les messages :\n\n• Accès aux notifications\n• Recevoir les SMS"
+            android:text="Pour afficher les messages au-dessus de toutes les applications :\n\n• ✅ Accès aux notifications\n• ✅ Afficher par-dessus les autres apps\n• ✅ Recevoir les SMS"
             android:textSize="15sp"
             android:textColor="#E0FFFFFF"
             android:gravity="center"

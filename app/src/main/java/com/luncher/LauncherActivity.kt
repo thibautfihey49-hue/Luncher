@@ -132,8 +132,16 @@ class LauncherActivity : AppCompatActivity() {
         if (!prefs.getBoolean(KEY_PERMISSIONS_DONE, false)) {
             showPermissionScreen()
         } else {
-            loadAllApps()
+            checkOverlayPermission()
         }
+    }
+
+    private fun checkOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "👉 Accorder l'autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+        }
+        loadAllApps()
     }
 
     private fun showPermissionScreen() {
@@ -146,7 +154,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun hidePermissionScreen() {
         permissionOverlay.visibility = View.GONE
         prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
-        loadAllApps()
+        checkOverlayPermission()
     }
 
     private fun requestAllPermissionsSequentially() {
@@ -174,21 +182,33 @@ class LauncherActivity : AppCompatActivity() {
         }
         
         if (!isNotificationListenerEnabled()) {
-            Toast.makeText(this, "👉 ÉTAPE 1/2 : Accès aux notifications", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 ÉTAPE 1/3 : Accès aux notifications", Toast.LENGTH_LONG).show()
             startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
+            handler.postDelayed({ checkNotificationListener() }, 2000)
         } else {
-            hidePermissionScreen()
+            checkOverlayPermissionStep()
         }
-        
-        handler.postDelayed({ checkAllPermissionsAndProceed() }, 2500)
     }
 
-    private fun checkAllPermissionsAndProceed() {
+    private fun checkNotificationListener() {
         if (isNotificationListenerEnabled()) {
-            Toast.makeText(this, "✅ Toutes permissions accordées !", Toast.LENGTH_LONG).show()
-            hidePermissionScreen()
+            checkOverlayPermissionStep()
         } else {
             Toast.makeText(this, "⚠️ Accès notifications manquant", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun checkOverlayPermissionStep() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "👉 ÉTAPE 2/3 : Autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+            handler.postDelayed({ 
+                if (Settings.canDrawOverlays(this)) {
+                    hidePermissionScreen()
+                }
+            }, 2000)
+        } else {
+            hidePermissionScreen()
         }
     }
 
