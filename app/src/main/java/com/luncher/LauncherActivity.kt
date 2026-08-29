@@ -263,7 +263,7 @@ class LauncherActivity : AppCompatActivity() {
             duration = 300
             interpolator = DecelerateInterpolator(1.2f)
             addListener(object : AnimatorListenerAdapter() {
-                override fun onAnimationEnd(animation: android.animation.Animator?) {
+                override fun onAnimationEnd(animation: android.animation.Animator)
                     drawerLayout.visibility = View.GONE
                 }
             })
