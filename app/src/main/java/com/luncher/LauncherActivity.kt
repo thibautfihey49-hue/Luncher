@@ -50,8 +50,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var dragHandle: View
     private lateinit var drawerLayout: LinearLayout
     private lateinit var searchInput: EditText
-    private lateinit var searchBar: View
-    private lateinit var searchBarContainer: LinearLayout
+        private lateinit var searchBarContainer: LinearLayout
     private lateinit var appsRecycler: RecyclerView
     private lateinit var rootLayout: View
     private lateinit var timeContainer: LinearLayout
@@ -127,8 +126,7 @@ class LauncherActivity : AppCompatActivity() {
         dragHandle = findViewById(R.id.drag_handle)
         drawerLayout = findViewById(R.id.drawer_layout)
         searchInput = findViewById(R.id.search_input)
-        searchBar = findViewById(R.id.search_bar)
-        searchBarContainer = findViewById(R.id.search_bar_container)
+                searchBarContainer = findViewById(R.id.search_bar_container)
         appsRecycler = findViewById(R.id.apps_recycler)
         rootLayout = findViewById(R.id.root_layout)
         timeContainer = findViewById(R.id.time_container)
