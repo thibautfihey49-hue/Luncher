@@ -1,6 +1,7 @@
 package com.luncher
 
 import android.Manifest
+import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -19,10 +20,12 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowManager
+import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -53,6 +56,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var rootLayout: LinearLayout
     private lateinit var timeContainer: LinearLayout
     private lateinit var statusText: TextView
+    private lateinit var permissionOverlay: LinearLayout
     
     private lateinit var adapter: AppAdapter
     private lateinit var prefs: SharedPreferences
@@ -72,6 +76,7 @@ class LauncherActivity : AppCompatActivity() {
     private val KEY_TEXT_COLOR = "text_color"
     private val KEY_HOUR_X = "hour_x"
     private val KEY_HOUR_Y = "hour_y"
+    private val KEY_PERMISSIONS_DONE = "permissions_done"
 
     private val colorNames = listOf(
         "⚫ Noir", "⚪ Blanc", "🔴 Rouge", "🟡 Jaune", "🟠 Or",
@@ -97,10 +102,15 @@ class LauncherActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
+        var allGranted = true
         permissions.entries.forEach { 
             if (!it.value) {
-                Toast.makeText(this, "⚠️ Permission requise : ${it.key}", Toast.LENGTH_LONG).show()
+                allGranted = false
+                Toast.makeText(this, "⚠️ Permission refusée : ${it.key}", Toast.LENGTH_LONG).show()
             }
+        }
+        if (allGranted) {
+            checkAllPermissions()
         }
     }
 
@@ -117,6 +127,7 @@ class LauncherActivity : AppCompatActivity() {
         rootLayout = findViewById(R.id.root_layout)
         timeContainer = findViewById(R.id.time_container)
         statusText = findViewById(R.id.status_text)
+        permissionOverlay = findViewById(R.id.permission_overlay)
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -133,14 +144,35 @@ class LauncherActivity : AppCompatActivity() {
         loadSavedWallpaper()
         loadTextColor()
         loadTimePosition()
+        
+        // ✅ AFFICHE L'ÉCRAN DE PERMISSIONS AU DÉMARRAGE
+        if (!prefs.getBoolean(KEY_PERMISSIONS_DONE, false)) {
+            showPermissionScreen()
+        } else {
+            loadAllApps()
+            setupMessagesObserver()
+            ensureNotificationWindow()
+        }
+    }
+
+    // ✅ ÉCRAN DE DEMANDE DE PERMISSIONS
+    private fun showPermissionScreen() {
+        permissionOverlay.visibility = View.VISIBLE
+        permissionOverlay.findViewById<Button>(R.id.btn_grant_all).setOnClickListener {
+            requestAllPermissionsSequentially()
+        }
+    }
+
+    private fun hidePermissionScreen() {
+        permissionOverlay.visibility = View.GONE
+        prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
         loadAllApps()
         setupMessagesObserver()
-        checkAllPermissions()
-        requestOverlayPermission()
         ensureNotificationWindow()
     }
 
-    private fun checkAllPermissions() {
+    // ✅ DEMANDE TOUTES LES PERMISSIONS UNE PAR UNE
+    private fun requestAllPermissionsSequentially() {
         val permissionsNeeded = mutableListOf<String>()
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -162,25 +194,64 @@ class LauncherActivity : AppCompatActivity() {
             permissionsNeeded.add(Manifest.permission.SEND_SMS)
         }
         
+        // ✅ Demande des permissions classiques
         if (permissionsNeeded.isNotEmpty()) {
             requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
         }
         
+        // ✅ Demande ACCÈS AUX NOTIFICATIONS
         if (!isNotificationListenerEnabled()) {
-            Toast.makeText(this, "👉 Activez l'accès aux notifications pour Luncher", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 ÉTAPE 1/3 : Accès aux notifications", Toast.LENGTH_LONG).show()
             val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
             startActivity(intent)
         }
-    }
-    
-    private fun requestOverlayPermission() {
+        
+        // ✅ Demande AFFICHAGE PAR-DESSUS LES APPS
         if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 Autorisez : Afficher par-dessus les autres applications", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 ÉTAPE 2/3 : Afficher par-dessus les applications", Toast.LENGTH_LONG).show()
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
         }
+        
+        // ✅ Demande ACCÈS À LA LISTE DES APPLICATIONS
+        if (!hasUsageStatsPermission()) {
+            Toast.makeText(this, "👉 ÉTAPE 3/3 : Accès aux infos d'utilisation (pour voir TOUTES vos apps)", Toast.LENGTH_LONG).show()
+            val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+            startActivity(intent)
+        }
+        
+        // ✅ Vérifie après un délai
+        handler.postDelayed({ checkAllPermissionsAndProceed() }, 3000)
     }
-    
+
+    private fun hasUsageStatsPermission(): Boolean {
+        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
+        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        } else {
+            @Suppress("DEPRECATION")
+            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
+        }
+        return mode == AppOpsManager.MODE_ALLOWED
+    }
+
+    private fun checkAllPermissionsAndProceed() {
+        val hasNotifAccess = isNotificationListenerEnabled()
+        val hasOverlay = Settings.canDrawOverlays(this)
+        val hasUsageAccess = hasUsageStatsPermission()
+        
+        if (hasNotifAccess && hasOverlay && hasUsageAccess) {
+            Toast.makeText(this, "✅ TOUTES les permissions accordées !", Toast.LENGTH_LONG).show()
+            hidePermissionScreen()
+        } else {
+            val missing = mutableListOf<String>()
+            if (!hasNotifAccess) missing.add("• Accès notifications")
+            if (!hasOverlay) missing.add("• Affichage par-dessus")
+            if (!hasUsageAccess) missing.add("• Accès liste des applications")
+            Toast.makeText(this, "⚠️ Il manque :\n${missing.joinToString("\n")}\n\nAppuyez à nouveau sur le bouton", Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun isNotificationListenerEnabled(): Boolean {
         val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
         return enabledListeners?.contains(packageName) == true
@@ -201,7 +272,6 @@ class LauncherActivity : AppCompatActivity() {
         notificationAdapter?.notifyDataSetChanged()
     }
 
-    // ✅ CRÉE LA FENÊTRE FLOTTANTE — PAR-DESSUS TOUTES LES APPLICATIONS
     private fun ensureNotificationWindow() {
         if (!Settings.canDrawOverlays(this)) return
         
@@ -227,7 +297,6 @@ class LauncherActivity : AppCompatActivity() {
                 },
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                // ✅ FLAGS CORRIGÉS
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
                 WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
@@ -417,15 +486,19 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
+    // ✅ CHARGE TOUTES LES APPLICATIONS — MÉTHODE FORCÉE
     private fun loadAllApps() {
-        statusText.text = "🔄 Chargement des applications..."
+        statusText.text = "🔄 Chargement complet des applications..."
         
         CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            val launchIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-            val resolveInfos = pm.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL)
+            // ✅ MÉTHODE 1 : Toutes les apps avec un launcher
+            val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_ALL)
+            
+            Log.d("LUNCHER", "Résultats queryIntentActivities: ${resolveInfos.size}")
             
             for (ri in resolveInfos) {
                 try {
@@ -433,43 +506,32 @@ class LauncherActivity : AppCompatActivity() {
                     if (packageName == this@LauncherActivity.packageName) continue
                     
                     val appInfo = pm.getApplicationInfo(packageName, 0)
-                    val name = appInfo.loadLabel(pm).toString()
-                    val icon: Drawable = appInfo.loadIcon(pm)
+                    val name = appInfo.loadLabel(pm).toString().trim()
                     
-                    if (name.isNotEmpty() && !name.startsWith(".")) {
-                        apps.add(AppInfo(name, packageName, icon))
-                    }
-                } catch (e: Exception) {}
-            }
-            
-            val userApps = mutableListOf<AppInfo>()
-            val systemApps = mutableListOf<AppInfo>()
-            
-            for (app in apps) {
-                try {
-                    val appInfo = pm.getApplicationInfo(app.packageName, 0)
+                    if (name.isEmpty() || name.startsWith(".")) continue
+                    
+                    val icon: Drawable = appInfo.loadIcon(pm)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
                     val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                     
-                    if (!isSystemApp || isUpdatedSystemApp) {
-                        userApps.add(app)
-                    } else {
-                        systemApps.add(app)
-                    }
+                    apps.add(AppInfo(name, packageName, icon, isSystemApp && !isUpdatedSystemApp))
                 } catch (e: Exception) {
-                    userApps.add(app)
+                    Log.e("LUNCHER", "Erreur chargement app", e)
                 }
             }
             
-            val sortedUser = userApps.sortedBy { it.name.lowercase() }
-            val sortedSystem = systemApps.sortedBy { it.name.lowercase() }
-            val finalList = sortedUser + sortedSystem
+            // ✅ TRI : Apps UTILISATEUR D'ABORD, PUIS SYSTÈME
+            val userApps = apps.filter { !it.isSystemApp }.sortedBy { it.name.lowercase() }
+            val systemApps = apps.filter { it.isSystemApp }.sortedBy { it.name.lowercase() }
+            val finalList = userApps + systemApps
+            
+            Log.d("LUNCHER", "Total: ${finalList.size} | Utilisateur: ${userApps.size} | Système: ${systemApps.size}")
             
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
-                statusText.text = "✅ ${finalList.size} applications (${userApps.size} utilisateur)"
-                handler.postDelayed({ statusText.visibility = View.GONE }, 3000)
+                statusText.text = "✅ ${finalList.size} applications trouvées\n📱 ${userApps.size} installées par vous"
+                handler.postDelayed({ statusText.visibility = View.GONE }, 5000)
             }
         }
     }

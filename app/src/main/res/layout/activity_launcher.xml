@@ -6,6 +6,65 @@
     android:orientation="vertical"
     android:background="#00000000">
 
+    <!-- ✅ ÉCRAN DE DEMANDE DE PERMISSIONS -->
+    <LinearLayout
+        android:id="@+id/permission_overlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#FF000000"
+        android:gravity="center"
+        android:padding="30dp"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="🔐 Autorisations requises"
+            android:textSize="28sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:layout_marginBottom="30dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Pour que Luncher fonctionne correctement, vous devez accorder ces 3 autorisations :"
+            android:textSize="16sp"
+            android:textColor="#E0FFFFFF"
+            android:gravity="center"
+            android:layout_marginBottom="25dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="1️⃣ Accès aux notifications\n2️⃣ Afficher par-dessus les autres apps\n3️⃣ Accès à la liste des applications"
+            android:textSize="15sp"
+            android:textColor="#B0FFFFFF"
+            android:padding="20dp"
+            android:background="#1FFFFFFF"
+            android:layout_marginBottom="35dp"/>
+
+        <Button
+            android:id="@+id/btn_grant_all"
+            android:layout_width="match_parent"
+            android:layout_height="55dp"
+            android:text="✅ ACCORDER TOUTES LES AUTORISATIONS"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:backgroundTint="#4CAF50"
+            android:textColor="#FFFFFF"
+            android:elevation="8dp"/>
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="\n💡 Vous serez redirigé(e) vers les paramètres pour chaque autorisation.\nRevenez à Luncher après chaque étape."
+            android:textSize="13sp"
+            android:textColor="#80FFFFFF"
+            android:gravity="center"/>
+    </LinearLayout>
+
     <!-- Zone supérieure : Heure et Date -->
     <LinearLayout
         android:layout_width="match_parent"
@@ -47,10 +106,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Chargement..."
-            android:textSize="12sp"
+            android:textSize="14sp"
             android:textColor="#80FFFFFF"
-            android:layout_marginTop="10dp"
-            android:visibility="visible"/>
+            android:layout_marginTop="15dp"
+            android:visibility="visible"
+            android:gravity="center"/>
     </LinearLayout>
 
     <!-- Bouton pour ouvrir/fermer le tiroir -->
