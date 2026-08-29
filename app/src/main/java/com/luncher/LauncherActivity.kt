@@ -96,7 +96,9 @@ class LauncherActivity : AppCompatActivity() {
                 Toast.makeText(this, "⚠️ Refusé : ${it.key}", Toast.LENGTH_LONG).show()
             }
         }
-        if (allGranted) checkAllPermissionsAndProceed()
+        if (allGranted) {
+            checkAllPermissionsAndProceed()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -136,51 +138,7 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    private fun checkOverlayPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 Accorder l'autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
-            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-        }
-        loadAllApps()
-    }
-
-    private fun showPermissionScreen() {
-        permissionOverlay.visibility = View.VISIBLE
-        permissionOverlay.findViewById<Button>(R.id.btn_grant_all).setOnClickListener {
-            requestAllPermissionsSequentially()
-        }
-    }
-
-    private fun hidePermissionScreen() {
-        permissionOverlay.visibility = View.GONE
-        prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
-        checkOverlayPermission()
-    }
-
-    private fun requestAllPermissionsSequentially() {
-        val permissionsNeeded = mutableListOf<String>()
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED)
-                permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
-                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
-        } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
-                permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-        
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            permissionsNeeded.add(Manifest.permission.READ_SMS)
-            permissionsNeeded.add(Manifest.permission.RECEIVE_SMS)
-            permissionsNeeded.add(Manifest.permission.SEND_SMS)
-        }
-        
-        if (permissionsNeeded.isNotEmpty()) {
-            requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
-            return
-        }
-        
+    private fun checkAllPermissionsAndProceed() {
         if (!isNotificationListenerEnabled()) {
             Toast.makeText(this, "👉 ÉTAPE 1/3 : Accès aux notifications", Toast.LENGTH_LONG).show()
             startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
@@ -210,6 +168,54 @@ class LauncherActivity : AppCompatActivity() {
         } else {
             hidePermissionScreen()
         }
+    }
+
+    private fun checkOverlayPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "👉 Accorder l'autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
+            startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
+        }
+        loadAllApps()
+    }
+
+    private fun showPermissionScreen() {
+        permissionOverlay.visibility = View.VISIBLE
+        permissionOverlay.findViewById<Button>(R.id.btn_grant_all).setOnClickListener {
+            requestAllPermissionsSequentially()
+        }
+    }
+
+    private fun hidePermissionScreen() {
+        permissionOverlay.visibility = View.GONE
+        prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
+        loadAllApps()
+    }
+
+    private fun requestAllPermissionsSequentially() {
+        val permissionsNeeded = mutableListOf<String>()
+        
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED)
+                permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+                permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
+                permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+        
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
+            permissionsNeeded.add(Manifest.permission.READ_SMS)
+            permissionsNeeded.add(Manifest.permission.RECEIVE_SMS)
+            permissionsNeeded.add(Manifest.permission.SEND_SMS)
+        }
+        
+        if (permissionsNeeded.isNotEmpty()) {
+            requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
+            return
+        }
+        
+        checkAllPermissionsAndProceed()
     }
 
     private fun isNotificationListenerEnabled(): Boolean {
