@@ -215,7 +215,8 @@ class LauncherActivity : AppCompatActivity() {
             drawerLayout.getLocationOnScreen(drawerLocation)
             val drawerTop = drawerLocation[1]
             val drawerHeight = drawerLayout.height
-            val drawerHalfWay = drawerTop + (drawerHeight / 2f)  // MOITIÉ HAUTE
+            // ZONE ÉLARGIE : 60% DU HAUT DU TIROIR (pas seulement la moitié)
+            val zoneFermetureLimite = drawerTop + (drawerHeight * 0.6f)
             
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -226,8 +227,8 @@ class LauncherActivity : AppCompatActivity() {
                     if (isDrawerOpen) {
                         val deltaY = event.rawY - startY
                         val touchY = event.rawY
-                        // Seulement si le toucher est DANS LA MOITIÉ HAUTE du tiroir
-                        if (deltaY > 0 && touchY < drawerHalfWay) {
+                        // Fermeture active DANS LES 60% SUPÉRIEURS DU TIROIR ENTIER
+                        if (deltaY > 0 && touchY < zoneFermetureLimite) {
                             drawerOffset = deltaY
                             drawerLayout.translationY = deltaY
                         }
