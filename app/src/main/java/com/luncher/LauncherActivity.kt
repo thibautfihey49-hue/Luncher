@@ -2,9 +2,11 @@ package com.luncher
 
 import android.Manifest
 import android.animation.ObjectAnimator
+import android.animation.AnimatorListenerAdapter
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -36,6 +38,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import kotlin.math.abs
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
@@ -71,7 +75,7 @@ class LauncherActivity : AppCompatActivity() {
     private var timeStartY = 0f
     private var timeViewStartX = 0f
     private var timeViewStartY = 0f
-    private val LONG_PRESS_THRESHOLD = 500L // 500ms = appui long
+    private val LONG_PRESS_THRESHOLD = 500L
     private var pressStartTime = 0L
     private var hasMovedDuringPress = false
 
@@ -136,7 +140,7 @@ class LauncherActivity : AppCompatActivity() {
         setupSearch()
         setupDrawerGestures()
         setupDateTime()
-        setupTimeGestures() // ✅ GESTURES HEURE/DATE
+        setupTimeGestures()
         setupLongPressActions()
         loadSavedWallpaper()
         loadTextColor()
@@ -149,9 +153,6 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ======================================================
-    // ✅ GESTURES : APPUI COURT = COULEUR | APPUI LONG = DÉPLACER
-    // ======================================================
     private fun setupTimeGestures() {
         timeContainer.setOnTouchListener { view, event ->
             when (event.action) {
@@ -188,7 +189,6 @@ class LauncherActivity : AppCompatActivity() {
                     
                     when {
                         isDraggingTime -> {
-                            // ✅ Fin du déplacement : sauvegarder la position
                             prefs.edit {
                                 putFloat(KEY_HOUR_X, view.x)
                                 putFloat(KEY_HOUR_Y, view.y)
@@ -196,7 +196,6 @@ class LauncherActivity : AppCompatActivity() {
                             Toast.makeText(this, "✅ Position sauvegardée", Toast.LENGTH_SHORT).show()
                         }
                         pressDuration < LONG_PRESS_THRESHOLD && !hasMovedDuringPress -> {
-                            // ✅ APPUI COURT → CHANGER COULEUR
                             showColorPickerDialog()
                         }
                     }
@@ -263,8 +262,12 @@ class LauncherActivity : AppCompatActivity() {
         ObjectAnimator.ofFloat(drawerLayout, View.TRANSLATION_Y, screenHeight).apply {
             duration = 300
             interpolator = DecelerateInterpolator(1.2f)
+            addListener(object : AnimatorListenerAdapter() {
+                override fun onAnimationEnd(animation: android.animation.Animator?) {
+                    drawerLayout.visibility = View.GONE
+                }
+            })
             start()
-            addListener(onEnd = { drawerLayout.visibility = View.GONE })
         }
     }
 
@@ -359,7 +362,6 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun setupLongPressActions() {
         rootLayout.setOnLongClickListener { changerFondEcran(); true }
-        // ❌ Plus d'appui long sur l'heure — déplacé dans setupTimeGestures()
     }
 
     private fun showColorPickerDialog() {
