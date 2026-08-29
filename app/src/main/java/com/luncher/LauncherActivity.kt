@@ -33,10 +33,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 class LauncherActivity : AppCompatActivity() {
     
@@ -57,6 +59,8 @@ class LauncherActivity : AppCompatActivity() {
     private var allApps = listOf<AppInfo>()
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timeRunnable: Runnable
+    private var loadJob: Job? = null
+    private val isLoaded = AtomicBoolean(false)
 
     private val PREFS_NAME = "LuncherPrefs"
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
@@ -175,7 +179,9 @@ class LauncherActivity : AppCompatActivity() {
             Toast.makeText(this, "👉 Accorder l'autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
         }
-        loadAllApps()
+        if (!isLoaded.get()) {
+            loadAllApps()
+        }
     }
 
     private fun showPermissionScreen() {
@@ -188,7 +194,9 @@ class LauncherActivity : AppCompatActivity() {
     private fun hidePermissionScreen() {
         permissionOverlay.visibility = View.GONE
         prefs.edit { putBoolean(KEY_PERMISSIONS_DONE, true) }
-        loadAllApps()
+        if (!isLoaded.get()) {
+            loadAllApps()
+        }
     }
 
     private fun requestAllPermissionsSequentially() {
@@ -370,19 +378,26 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun loadAllApps() {
-        statusText.text = "🔄 Chargement des applications..."
+        if (isLoaded.get()) return
+        loadJob?.cancel()
         
-        CoroutineScope(Dispatchers.IO).launch {
+        statusText.text = "🔄 Chargement des applications..."
+        isLoaded.set(false)
+        
+        loadJob = CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
+            // ✅ OPTIMISATION: Utilisation de MATCH_DEFAULT_ONLY au lieu de MATCH_ALL (beaucoup plus rapide)
             val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-            val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_ALL)
+            val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            
+            val selfPackage = packageName
             
             for (ri in resolveInfos) {
                 try {
                     val packageName = ri.activityInfo.packageName
-                    if (packageName == this@LauncherActivity.packageName) continue
+                    if (packageName == selfPackage) continue
                     
                     val appInfo = pm.getApplicationInfo(packageName, 0)
                     val name = appInfo.loadLabel(pm).toString().trim()
@@ -390,21 +405,22 @@ class LauncherActivity : AppCompatActivity() {
                     
                     val icon = appInfo.loadIcon(pm)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                     
-                    apps.add(AppInfo(name, packageName, icon, isSystemApp && !isUpdatedSystemApp))
-                } catch (e: Exception) { }
+                    apps.add(AppInfo(name, packageName, icon, isSystemApp))
+                } catch (e: Exception) {
+                    // Ignorer silencieusement les erreurs
+                }
             }
             
-            val userApps = apps.filter { !it.isSystemApp }.sortedBy { it.name.lowercase() }
-            val systemApps = apps.filter { it.isSystemApp }.sortedBy { it.name.lowercase() }
-            val finalList = userApps + systemApps
+            // ✅ TRI SIMPLE PAR NOM — plus rapide
+            val finalList = apps.sortedWith(compareBy({ it.name.lowercase() }, { it.packageName }))
             
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
-                statusText.text = "✅ ${finalList.size} applications\n📱 ${userApps.size} installées par vous"
-                handler.postDelayed({ statusText.visibility = View.GONE }, 4000)
+                statusText.text = "✅ ${finalList.size} applications chargées"
+                isLoaded.set(true)
+                handler.postDelayed({ statusText.visibility = View.GONE }, 2500)
             }
         }
     }
@@ -412,5 +428,6 @@ class LauncherActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacks(timeRunnable)
+        loadJob?.cancel()
     }
 }
