@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.PixelFormat
 import android.os.Build
+import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -22,9 +23,6 @@ import androidx.core.app.NotificationCompat
 import com.luncher.R
 import android.app.Service
 import android.os.IBinder
-import android.os.Bundle
-import android.widget.Button
-import com.google.android.material.button.MaterialButton
 
 class FloatingNotificationService : Service() {
 
@@ -71,6 +69,7 @@ class FloatingNotificationService : Service() {
         removeAggressiveWindow()
         NotificationRepository.listener = null
         instance = null
+        // Auto restart agressif
         try { show(this) } catch (_: Exception) {}
     }
 
@@ -89,7 +88,7 @@ class FloatingNotificationService : Service() {
         val pending = PendingIntent.getActivity(this, 0, packageManager.getLaunchIntentForPackage(packageName), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Luncher actif")
-            .setContentText("Popup SMS Mail WhatsApp")
+            .setContentText("Popup agressif en premier plan")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pending)
             .setOngoing(true)
@@ -129,7 +128,7 @@ class FloatingNotificationService : Service() {
         try {
             windowManager?.addView(floatingView, params)
         } catch (e: Exception) {
-            Toast.makeText(this, "Permission overlay requise", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "Overlay permission requise", Toast.LENGTH_LONG).show()
             return
         }
         refreshAggressive()
@@ -139,7 +138,7 @@ class FloatingNotificationService : Service() {
         val cont = container ?: return
         val wm = windowManager
         val view = floatingView
-        if (wm == null || view == null) {
+        if (cont == null || wm == null || view == null) {
             showAggressiveWindow()
             return
         }
@@ -161,93 +160,70 @@ class FloatingNotificationService : Service() {
             val timeView = card.findViewById<TextView>(R.id.notifTime)
             val titleView = card.findViewById<TextView>(R.id.notifTitle)
             val contentView = card.findViewById<TextView>(R.id.notifContent)
-            val actionsContainer = card.findViewById<LinearLayout>(R.id.notifActions)
+            val btnClose = card.findViewById<View>(R.id.btnClose)
+            val btnOpen = card.findViewById<View>(R.id.btnOpen)
+            val btnReply = card.findViewById<View>(R.id.btnReply)
 
             try { iconView.setImageDrawable(packageManager.getApplicationIcon(notif.packageName)) } catch (_: Exception) {}
             appNameView.text = notif.appName
-            timeView.text = android.text.format.DateFormat.format("HH:mm", notif.time).toString()
+            timeView.text = android.text.format.DateFormat.format("HH:mm", notif.time)
             titleView.text = if (notif.title.isBlank()) notif.appName else notif.title
             contentView.text = notif.content
 
-            actionsContainer.removeAllViews()
-
-            // Bouton FERMER permanent
-            val closeBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-                text = "FERMER"
-                setTextColor(0xFFFF8888.toInt())
-            }
-            closeBtn.setOnClickListener {
+            // FERMEr agressif -> supprime partout
+            btnClose.setOnClickListener {
                 NotificationRepository.notifs.remove(notif)
-                try { NotificationListener.getInstance()?.cancelNotification(notif.sbnKey) } catch (_: Exception) {}
+                try { 
+                    // Essaie de cancel la notif système aussi
+                    val nlService = NotificationListener.getInstance()
+                    nlService?.cancelNotification(notif.sbnKey)
+                } catch (_: Exception) {}
                 refreshAggressive()
             }
-            actionsContainer.addView(closeBtn)
 
-            // VRAIS boutons de la notif systeme (Archiver, Marquer comme lu, Repondre etc)
-            notif.notification.actions?.forEach { action ->
-                val btn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-                    text = action.title.toString().uppercase()
-                    setTextColor(
-                        when {
-                            title.toString().contains("pondre", true) -> 0xFFFFEB3B.toInt()
-                            title.toString().contains("chiv", true) -> 0xFFAAFFFFFF.toInt()
-                            else -> 0xFF2196F3.toInt()
-                        }
-                    )
-                }
-                btn.setOnClickListener {
-                    try {
-                        // Si action a RemoteInput (Repondre), on ouvre l'app pour saisir
-                        if (action.remoteInputs != null && action.remoteInputs.isNotEmpty()) {
-                            val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
-                            launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            if (launch != null) startActivity(launch) else action.actionIntent.send()
-                        } else {
-                            action.actionIntent.send()
-                        }
-                    } catch (e: Exception) {
-                        try { notif.notification.contentIntent?.send() } catch (_: Exception) {}
+            // OUVRIR
+            btnOpen.setOnClickListener {
+                try {
+                    val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
+                    if (launch != null) {
+                        launch.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        startActivity(launch)
+                    } else {
+                        notif.notification.contentIntent?.send()
                     }
-                    // Ne supprime pas si c'est Archiver/Marquer lu, laisse Android gerer, mais retire de notre liste
-                    if (action.title.toString().contains("pondre", true) == false) {
-                        NotificationRepository.notifs.remove(notif)
-                        refreshAggressive()
-                    }
+                } catch (e: Exception) {
+                    Toast.makeText(this, "Impossible d'ouvrir", Toast.LENGTH_SHORT).show()
                 }
-                actionsContainer.addView(btn)
+                NotificationRepository.notifs.remove(notif)
+                refreshAggressive()
             }
 
-            // Si pas d'actions systeme, ajoute OUVRIR + REPONDRE
-            if (notif.notification.actions.isNullOrEmpty()) {
-                val openBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-                    text = "OUVRIR"
-                    setTextColor(0xFF2196F3.toInt())
-                }
-                openBtn.setOnClickListener {
-                    try {
+            // REPONDRE agressif -> ouvre direct + essaie RemoteInput si dispo
+            btnReply.setOnClickListener {
+                var handled = false
+                // Tente reponse directe via RemoteInput si existe
+                try {
+                    val remoteInputs = notif.notification.actions?.flatMap { act ->
+                        act.remoteInputs?.toList() ?: emptyList()
+                    }
+                    if (!remoteInputs.isNullOrEmpty()) {
+                        // Ouvre l'app pour repondre, c'est le plus fiable
                         val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
                         launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        if (launch != null) startActivity(launch) else notif.notification.contentIntent?.send()
-                    } catch (_: Exception) {}
-                    NotificationRepository.notifs.remove(notif)
-                    refreshAggressive()
-                }
-                actionsContainer.addView(openBtn)
+                        if (launch != null) startActivity(launch)
+                        handled = true
+                    }
+                } catch (_: Exception) {}
 
-                val replyBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-                    text = "REPONDRE"
-                    setTextColor(0xFFFFEB3B.toInt())
-                }
-                replyBtn.setOnClickListener {
+                if (!handled) {
                     try {
                         val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
                         launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                         if (launch != null) startActivity(launch) else notif.notification.contentIntent?.send()
                     } catch (_: Exception) {}
-                    NotificationRepository.notifs.remove(notif)
-                    refreshAggressive()
                 }
-                actionsContainer.addView(replyBtn)
+                NotificationRepository.notifs.remove(notif)
+                refreshAggressive()
             }
 
             cont.addView(card)
