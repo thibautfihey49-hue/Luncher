@@ -85,15 +85,19 @@ class MessageWindowAdapter(
             }
         }
 
+        // ✅ CORRECTION : FLAG_ACTIVITY_NEW_TASK OBLIGATOIRE depuis un Service
         holder.openBtn.setOnClickListener {
             try {
                 val launchIntent = context.packageManager.getLaunchIntentForPackage(msg.packageName)
                 if (launchIntent != null) {
                     launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    launchIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                     context.startActivity(launchIntent)
+                } else {
+                    Toast.makeText(context, "❌ Application introuvable", Toast.LENGTH_SHORT).show()
                 }
             } catch (e: Exception) {
-                Toast.makeText(context, "Impossible d'ouvrir", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "❌ Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -103,7 +107,7 @@ class MessageWindowAdapter(
             SmsManager.getDefault().sendTextMessage(number, null, message, null, null)
             Toast.makeText(context, "✅ SMS envoyé !", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(context, "❌ Erreur", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "❌ Erreur SMS: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 

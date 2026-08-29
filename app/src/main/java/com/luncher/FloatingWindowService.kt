@@ -45,12 +45,14 @@ class FloatingWindowService : Service() {
             
             floatingView = inflater.inflate(R.layout.floating_notification_window, null)
             
+            // ✅ CORRECTION : ENLEVER FLAG_NOT_FOCUSABLE pour que le clavier fonctionne
             val layoutParams = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 WindowManager.LayoutParams(
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    // ✅ IMPORTANT : PAS de FLAG_NOT_FOCUSABLE → sinon le clavier ne s'ouvre pas
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT
                 )
             } else {
@@ -59,7 +61,8 @@ class FloatingWindowService : Service() {
                     WindowManager.LayoutParams.MATCH_PARENT,
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.TYPE_PHONE,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    // ✅ IMPORTANT : PAS de FLAG_NOT_FOCUSABLE
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                     PixelFormat.TRANSLUCENT
                 )
             }
