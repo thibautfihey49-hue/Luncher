@@ -11,12 +11,12 @@ class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
             
-            val messages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            val messages: Array<SmsMessage> = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
                 Telephony.Sms.Intents.getMessagesFromIntent(intent)
             } else {
                 @Suppress("DEPRECATION")
                 val pdus = intent.extras?.get("pdus") as? Array<*>
-                pdus?.map { SmsMessage.createFromPdu(it as ByteArray) } ?: emptyList()
+                pdus?.map { SmsMessage.createFromPdu(it as ByteArray) }?.toTypedArray() ?: emptyArray()
             }
             
             for (sms in messages) {
@@ -33,10 +33,7 @@ class SmsReceiver : BroadcastReceiver() {
                     packageName = "com.android.mms"
                 )
                 
-                // ✅ Affiche la popup
                 MessagePopupActivity.show(context, message)
-                
-                // ✅ LE SMS CONTINUE VERS LA BOÎTE DE RÉCEPTION — PAS DE BLOCAGE !
             }
         }
     }
