@@ -6,12 +6,18 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import com.luncher.data.AppInfo
+
+data class AppInfo(
+    val name: String,
+    val packageName: String,
+    val icon: android.graphics.drawable.Drawable,
+    val isSystemApp: Boolean = false
+)
 
 class AppAdapter(private val onAppClick: (AppInfo) -> Unit) : RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
-    
-    private var fullList = listOf<AppInfo>()
-    private var filteredList = listOf<AppInfo>()
+
+    private var apps: List<AppInfo> = emptyList()
+    private var filteredApps: List<AppInfo> = emptyList()
 
     inner class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.app_icon)
@@ -19,28 +25,32 @@ class AppAdapter(private val onAppClick: (AppInfo) -> Unit) : RecyclerView.Adapt
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
-        val view = LayoutInflater.from(parent.context).inflate(R.layout.item_app, parent, false)
+        val view = LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_app, parent, false)
         return AppViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-        val app = filteredList[position]
+        val app = filteredApps[position]
         holder.name.text = app.name
         holder.icon.setImageDrawable(app.icon)
         holder.itemView.setOnClickListener { onAppClick(app) }
     }
 
-    override fun getItemCount() = filteredList.size
+    override fun getItemCount() = filteredApps.size
 
-    fun setList(list: List<AppInfo>) {
-        fullList = list
-        filteredList = list
+    fun setList(newApps: List<AppInfo>) {
+        apps = newApps
+        filteredApps = newApps
         notifyDataSetChanged()
     }
 
     fun filter(query: String) {
-        filteredList = if (query.isEmpty()) fullList 
-            else fullList.filter { it.name.contains(query, ignoreCase = true) }
+        filteredApps = if (query.isEmpty()) {
+            apps
+        } else {
+            apps.filter { it.name.contains(query, ignoreCase = true) }
+        }
         notifyDataSetChanged()
     }
 }

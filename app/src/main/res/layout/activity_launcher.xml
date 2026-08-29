@@ -1,160 +1,138 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/root_layout"
-    android:background="#00000000">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-    <!-- ===== ÉCRAN D'ACCUEIL ===== -->
-    <LinearLayout
+    <!-- FOND D'ÉCRAN : image de fond -->
+    <ImageView
+        android:id="@+id/wallpaper_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:scaleType="centerCrop" />
 
-        <LinearLayout
-            android:id="@+id/time_container"
+    <!-- HEURE ET DATE -->
+    <LinearLayout
+        android:id="@+id/time_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        android:layout_marginTop="80dp">
+
+        <TextView
+            android:id="@+id/heure_texte"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="80dp"
-            android:padding="16dp">
+            android:text="00:00"
+            android:textSize="70sp"
+            android:fontFamily="sans-serif-light"
+            android:textColor="#FFFFFF"
+            android:shadowColor="#80000000"
+            android:shadowDx="2"
+            android:shadowDy="2"
+            android:shadowRadius="4"/>
 
-            <TextView
-                android:id="@+id/heure_texte"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00"
-                android:textSize="72sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:fontFamily="sans-serif-light"/>
-
-            <TextView
-                android:id="@+id/date_texte"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Lundi 1 Janvier"
-                android:textSize="18sp"
-                android:textColor="#E0FFFFFF"
-                android:layout_marginTop="4dp"/>
-        </LinearLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"/>
-
-        <!-- Zone de glissement pour ouvrir le tiroir -->
-        <LinearLayout
-            android:id="@+id/drag_handle"
-            android:layout_width="match_parent"
-            android:layout_height="80dp"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <View
-                android:layout_width="40dp"
-                android:layout_height="4dp"
-                android:background="#00000000"
-                android:layout_marginBottom="8dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="↑ Glissez vers le haut"
-                android:textColor="#80FFFFFF"
-                android:textSize="13sp"/>
-        </LinearLayout>
+        <TextView
+            android:id="@+id/date_texte"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Date"
+            android:textSize="18sp"
+            android:textColor="#FFFFFF"
+            android:layout_marginTop="5dp"
+            android:shadowColor="#80000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="2"/>
     </LinearLayout>
 
-    <!-- ===== TIROIR D'APPLICATIONS — PLEIN ÉCRAN ===== -->
+    <!-- POIGNÉE D'OUVERTURE DU TIROIR -->
+    <View
+        android:id="@+id/drag_handle"
+        android:layout_width="50dp"
+        android:layout_height="5dp"
+        android:background="#80FFFFFF"
+        android:layout_marginBottom="15dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <!-- TIROIR D'APPLICATIONS -->
     <LinearLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
         android:background="#00000000"
-        android:elevation="24dp"
-        android:translationY="1000dp"
-        android:visibility="gone">
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
-        <!-- Barre de recherche -->
-        <LinearLayout
-            android:id="@+id/search_bar_container"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
-            <EditText
+        <!-- BARRE DE RECHERCHE -->
+        <EditText
             android:id="@+id/search_input"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="🔍 Rechercher une application..."
-            android:textColor="#FFFFFF"
-            android:textColorHint="#80FFFFFF"
-            android:background="#00000000"
-            android:paddingHorizontal="16dp"
-            android:layout_margin="12dp"
-            android:inputType="textFilter"/>
+            android:layout_height="wrap_content"
+            android:hint="Rechercher une application..."
+            android:inputType="text"
+            android:padding="15dp"
+            android:layout_margin="10dp"
+            android:background="#E0FFFFFF"
+            android:textColor="#FF000000"
+            android:hintTextColor="#FF666666"/>
 
-        <!-- Grille des applications -->
+        <!-- LISTE DES APPLICATIONS -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/apps_recycler"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingHorizontal="8dp"
-            android:clipToPadding="false"/>
-
-        <!-- Indicateur de fermeture -->
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="↓ Glissez vers le bas pour fermer"
-            android:textColor="#60FFFFFF"
-            android:textSize="12sp"
-            android:gravity="center"
-            android:padding="8dp"/>
+            android:layout_height="0dp"
+            android:layout_weight="1"
+            android:padding="5dp"/>
     </LinearLayout>
 
-    <!-- Overlay permissions -->
+    <!-- ÉCRAN DE DEMANDE DE PERMISSIONS -->
     <LinearLayout
         android:id="@+id/permission_overlay"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#00000000"
+        android:background="#DD000000"
         android:gravity="center"
-        android:padding="32dp"
-        android:visibility="gone">
+        android:visibility="gone"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent">
 
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="🔐 Permissions nécessaires"
-            android:textSize="24sp"
-            android:textStyle="bold"
+            android:text="Permissions nécessaires"
             android:textColor="#FFFFFF"
-            android:gravity="center"
-            android:layout_marginBottom="24dp"/>
+            android:textSize="24sp"
+            android:layout_marginBottom="20dp"/>
 
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Pour afficher les messages au-dessus de toutes les applications :"
-            android:textSize="15sp"
-            android:textColor="#E0FFFFFF"
-            android:gravity="center"
-            android:layout_marginBottom="32dp"/>
+            android:text="Accès aux notifications, fichiers et superposition"
+            android:textColor="#CCCCCC"
+            android:textSize="14sp"
+            android:layout_marginBottom="30dp"
+            android:gravity="center"/>
 
         <Button
             android:id="@+id/btn_grant_all"
-            android:layout_width="match_parent"
-            android:layout_height="55dp"
-            android:text="✅ Accorder toutes les permissions"
-            android:textSize="16sp"
-            android:backgroundTint="#2563EB"
-            android:textColor="#FFFFFF"/>
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Accorder toutes les permissions"
+            android:background="#FF2196F3"
+            android:textColor="#FFFFFF"
+            android:paddingHorizontal="30dp"
+            android:paddingVertical="10dp"/>
     </LinearLayout>
 
-</FrameLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

@@ -23,6 +23,7 @@ import android.view.View
 import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -32,30 +33,29 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.luncher.data.AppInfo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.abs
 import java.text.SimpleDateFormat
 import java.util.*
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.abs
 
 class LauncherActivity : AppCompatActivity() {
-    
+
     private lateinit var heureTexte: TextView
     private lateinit var dateTexte: TextView
     private lateinit var dragHandle: View
     private lateinit var drawerLayout: LinearLayout
     private lateinit var searchInput: EditText
-        private lateinit var searchBarContainer: LinearLayout
     private lateinit var appsRecycler: RecyclerView
     private lateinit var rootLayout: View
+    private lateinit var wallpaperView: ImageView
     private lateinit var timeContainer: LinearLayout
     private lateinit var permissionOverlay: LinearLayout
-    
+
     private lateinit var adapter: AppAdapter
     private lateinit var prefs: SharedPreferences
     private var isDrawerOpen = false
@@ -64,12 +64,12 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var timeRunnable: Runnable
     private var loadJob: Job? = null
     private val isLoaded = AtomicBoolean(false)
-    
+
     private var startY = 0f
     private var drawerOffset = 0f
     private val screenHeight by lazy { resources.displayMetrics.heightPixels.toFloat() }
     private val touchThreshold = 80f
-    
+
     private var isDraggingTime = false
     private var timeStartX = 0f
     private var timeStartY = 0f
@@ -111,24 +111,22 @@ class LauncherActivity : AppCompatActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
         var allGranted = true
-        permissions.entries.forEach { 
-            if (!it.value) allGranted = false
-        }
+        permissions.entries.forEach { if (!it.value) allGranted = false }
         if (allGranted) checkAllPermissionsAndProceed()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_launcher)
-        
+
         heureTexte = findViewById(R.id.heure_texte)
         dateTexte = findViewById(R.id.date_texte)
         dragHandle = findViewById(R.id.drag_handle)
         drawerLayout = findViewById(R.id.drawer_layout)
         searchInput = findViewById(R.id.search_input)
-                searchBarContainer = findViewById(R.id.search_bar_container)
         appsRecycler = findViewById(R.id.apps_recycler)
         rootLayout = findViewById(R.id.root_layout)
+        wallpaperView = findViewById(R.id.wallpaper_view)
         timeContainer = findViewById(R.id.time_container)
         permissionOverlay = findViewById(R.id.permission_overlay)
 
@@ -143,7 +141,7 @@ class LauncherActivity : AppCompatActivity() {
         loadSavedWallpaper()
         loadTextColor()
         loadTimePosition()
-        
+
         if (!prefs.getBoolean(KEY_PERMISSIONS_DONE, false)) {
             showPermissionScreen()
         } else {
@@ -202,6 +200,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun setupDrawerGestures() {
+        // 🔼 POUSSER LA POIGNÉE VERS LE HAUT = OUVRIR
         dragHandle.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -218,12 +217,14 @@ class LauncherActivity : AppCompatActivity() {
             }
         }
 
-        // Fermeture depuis la barre de recherche
-        searchBarContainer.setOnTouchListener { _, event ->
+        // 👇 TIRER LA BARRE DE RECHERCHE VERS LE BAS = FERMER
+        searchInput.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
-                    startY = event.rawY
-                    drawerOffset = 0f
+                    if (isDrawerOpen) {
+                        startY = event.rawY
+                        drawerOffset = 0f
+                    }
                     true
                 }
                 MotionEvent.ACTION_MOVE -> {
@@ -237,38 +238,7 @@ class LauncherActivity : AppCompatActivity() {
                     true
                 }
                 MotionEvent.ACTION_UP -> {
-                    if (drawerOffset > touchThreshold) {
-                        closeDrawer()
-                    } else if (isDrawerOpen) {
-                        resetDrawerPosition()
-                    }
-                    drawerOffset = 0f
-                    true
-                }
-                else -> true
-            }
-        }
-
-        // Fermeture depuis le reste du tiroir
-        drawerLayout.setOnTouchListener { _, event ->
-            when (event.action) {
-                MotionEvent.ACTION_DOWN -> {
-                    startY = event.rawY
-                    drawerOffset = 0f
-                    true
-                }
-                MotionEvent.ACTION_MOVE -> {
-                    if (isDrawerOpen) {
-                        val deltaY = event.rawY - startY
-                        if (deltaY > 0) {
-                            drawerOffset = deltaY
-                            drawerLayout.translationY = deltaY
-                        }
-                    }
-                    true
-                }
-                MotionEvent.ACTION_UP -> {
-                    if (drawerOffset > touchThreshold) {
+                    if (isDrawerOpen && drawerOffset > touchThreshold) {
                         closeDrawer()
                     } else if (isDrawerOpen) {
                         resetDrawerPosition()
@@ -330,7 +300,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun checkOverlayPermissionStep() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
-            handler.postDelayed({ 
+            handler.postDelayed({
                 if (Settings.canDrawOverlays(this)) hidePermissionScreen()
             }, 2000)
         } else {
@@ -450,7 +420,8 @@ class LauncherActivity : AppCompatActivity() {
         try {
             contentResolver.openInputStream(uri)?.use { inputStream ->
                 val bitmap = BitmapFactory.decodeStream(inputStream)
-                rootLayout.background = BitmapDrawable(resources, bitmap).apply { setFilterBitmap(true) }
+                wallpaperView.setImageBitmap(bitmap)
+                wallpaperView.scaleType = ImageView.ScaleType.CENTER_CROP
             }
         } catch (e: Exception) { }
     }
@@ -501,25 +472,25 @@ class LauncherActivity : AppCompatActivity() {
         loadJob = CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
-            
+
             val intent = Intent(Intent.ACTION_MAIN, null)
             intent.addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
-            
+
             val selfPackage = packageName
-            
+
             for (ri in resolveInfos) {
                 try {
                     val packageName = ri.activityInfo.packageName
                     if (packageName == selfPackage) continue
-                    
+
                     val appInfo = pm.getApplicationInfo(packageName, 0)
                     val name = pm.getApplicationLabel(appInfo).toString().trim()
                     if (name.isEmpty()) continue
-                    
+
                     val icon = pm.getApplicationIcon(packageName)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-                    
+
                     apps.add(AppInfo(name, packageName, icon, isSystemApp))
                 } catch (e: Exception) {
                     try {
@@ -531,9 +502,9 @@ class LauncherActivity : AppCompatActivity() {
                     } catch (e2: Exception) {}
                 }
             }
-            
+
             val finalList = apps.sortedBy { it.name.lowercase() }
-            
+
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
