@@ -274,7 +274,6 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun checkAllPermissionsAndProceed() {
         if (!isNotificationListenerEnabled()) {
-            Toast.makeText(this, "👉 ÉTAPE 1/2 : Accès aux notifications", Toast.LENGTH_LONG).show()
             startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
             handler.postDelayed({ checkNotificationListener() }, 2000)
         } else {
@@ -286,13 +285,11 @@ class LauncherActivity : AppCompatActivity() {
         if (isNotificationListenerEnabled()) {
             checkOverlayPermissionStep()
         } else {
-            Toast.makeText(this, "⚠️ Accès notifications manquant", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun checkOverlayPermissionStep() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 ÉTAPE 2/2 : Autorisation d'afficher par-dessus les autres apps", Toast.LENGTH_LONG).show()
             startActivity(Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName")))
             handler.postDelayed({ 
                 if (Settings.canDrawOverlays(this)) hidePermissionScreen()
