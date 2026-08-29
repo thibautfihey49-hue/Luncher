@@ -9,4 +9,3 @@
     <TextView android:id="@+id/notifContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FF222222" android:textSize="14sp" android:layout_marginTop="4dp" android:maxLines="5" android:ellipsize="end" />
     <LinearLayout android:id="@+id/notifActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:layout_marginTop="12dp" android:gravity="end" />
 </LinearLayout>
-
