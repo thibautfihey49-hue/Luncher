@@ -465,28 +465,46 @@ class LauncherActivity : AppCompatActivity() {
         loadJob = CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
-            val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-            val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            
+            val intent = Intent(Intent.ACTION_MAIN, null)
+            intent.addCategory(Intent.CATEGORY_LAUNCHER)
+            val resolveInfos = pm.queryIntentActivities(intent, PackageManager.MATCH_ALL)
+            
             val selfPackage = packageName
+            
             for (ri in resolveInfos) {
                 try {
                     val packageName = ri.activityInfo.packageName
                     if (packageName == selfPackage) continue
+                    
                     val appInfo = pm.getApplicationInfo(packageName, 0)
-                    val name = appInfo.loadLabel(pm).toString().trim()
-                    if (name.isEmpty() || name.startsWith(".")) continue
-                    val icon = appInfo.loadIcon(pm)
+                    val name = pm.getApplicationLabel(appInfo).toString().trim()
+                    if (name.isEmpty()) continue
+                    
+                    val icon = pm.getApplicationIcon(packageName)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    
                     apps.add(AppInfo(name, packageName, icon, isSystemApp))
-                } catch (e: Exception) { }
+                } catch (e: Exception) {
+                    try {
+                        val packageName = ri.activityInfo.packageName
+                        val name = ri.loadLabel(pm).toString().trim()
+                        if (name.isEmpty() || packageName == selfPackage) continue
+                        val icon = ri.loadIcon(pm)
+                        apps.add(AppInfo(name, packageName, icon, false))
+                    } catch (e2: Exception) {}
+                }
             }
-            val finalList = apps.sortedWith(compareBy({ it.name.lowercase() }, { it.packageName }))
+            
+            val finalList = apps.sortedBy { it.name.lowercase() }
+            
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
                 isLoaded.set(true)
             }
         }
+    }
     }
 
     override fun onDestroy() {
