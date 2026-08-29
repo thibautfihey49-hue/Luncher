@@ -28,6 +28,7 @@ class NotificationAdapter(
         val btnClose: Button = view.findViewById(R.id.btn_close)
         val etReply: EditText = view.findViewById(R.id.et_reply)
         val btnSendReply: Button = view.findViewById(R.id.btn_send_reply)
+        val btnOpenApp: Button = view.findViewById(R.id.btn_open_app)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotificationViewHolder {
@@ -62,14 +63,29 @@ class NotificationAdapter(
         holder.icon.setImageResource(iconRes)
         holder.title.text = titleText
         holder.sender.text = msg.sender
-        holder.content.text = msg.content  // ✅ TEXTE COMPLET DU MESSAGE !
-        holder.content.maxLines = 8        // ✅ JUSQU'À 8 LIGNES AFFICHÉES !
+        holder.content.text = msg.content
+        holder.content.maxLines = 6
         holder.itemView.background = bgDrawable
         
+        // ✅ FERMER LA NOTIFICATION
         holder.btnClose.setOnClickListener {
             onClose(msg.id)
         }
         
+        // ✅ OUVRIR L'APPLICATION CONCERNÉE
+        holder.btnOpenApp.setOnClickListener {
+            try {
+                val intent = context.packageManager.getLaunchIntentForPackage(msg.packageName)
+                if (intent != null) {
+                    intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Impossible d'ouvrir l'application", Toast.LENGTH_SHORT).show()
+            }
+        }
+        
+        // ✅ RÉPONDRE DIRECTEMENT
         holder.btnSendReply.setOnClickListener {
             val replyText = holder.etReply.text.toString().trim()
             if (replyText.isNotEmpty()) {

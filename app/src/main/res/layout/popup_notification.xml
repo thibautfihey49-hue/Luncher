@@ -3,10 +3,10 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp"
+    android:padding="18dp"
     android:layout_marginHorizontal="8dp"
-    android:layout_marginBottom="12dp"
-    android:elevation="40dp">
+    android:layout_marginBottom="10dp"
+    android:elevation="48dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -15,16 +15,16 @@
         android:gravity="top">
 
         <LinearLayout
-            android:layout_width="48dp"
-            android:layout_height="48dp"
+            android:layout_width="52dp"
+            android:layout_height="52dp"
             android:background="#FFFFFF30"
             android:gravity="center"
             android:layout_marginEnd="14dp">
             
             <ImageView
                 android:id="@+id/notif_icon"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
                 android:tint="#FFFFFF"/>
         </LinearLayout>
 
@@ -57,21 +57,40 @@
                 android:textSize="15sp"
                 android:textColor="#FFFFFF"
                 android:layout_marginTop="8dp"
-                android:maxLines="8"
+                android:maxLines="6"
                 android:scrollbars="vertical"
                 android:ellipsize="none"/>
         </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="14dp"
+        android:gravity="center">
 
         <Button
             android:id="@+id/btn_close"
-            android:layout_width="wrap_content"
-            android:layout_height="36dp"
-            android:text="✕"
-            android:textSize="14sp"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:text="✕ Fermer"
+            android:textSize="13sp"
             android:backgroundTint="#FFFFFF30"
             android:textColor="#FFFFFF"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:layout_marginEnd="8dp"
+            android:elevation="0dp"/>
+
+        <Button
+            android:id="@+id/btn_open_app"
+            android:layout_width="0dp"
+            android:layout_height="38dp"
+            android:layout_weight="1"
+            android:text="📂 Ouvrir"
+            android:textSize="13sp"
+            android:backgroundTint="#FFFFFF30"
+            android:textColor="#FFFFFF"
             android:layout_marginStart="8dp"
             android:elevation="0dp"/>
     </LinearLayout>
@@ -80,8 +99,8 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#20FFFFFF"
-        android:layout_marginTop="16dp"
-        android:layout_marginBottom="12dp"/>
+        android:layout_marginTop="12dp"
+        android:layout_marginBottom="10dp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -96,7 +115,7 @@
             android:layout_weight="1"
             android:hint="Votre réponse..."
             android:textSize="14sp"
-            android:minHeight="48dp"
+            android:minHeight="46dp"
             android:maxLines="3"
             android:background="#FFFFFF15"
             android:textColor="#FFFFFF"
@@ -107,14 +126,14 @@
         <Button
             android:id="@+id/btn_send_reply"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="Envoyer"
+            android:layout_height="46dp"
+            android:text="➤ Envoyer"
             android:textSize="13sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#000000"
             android:layout_marginStart="10dp"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:textStyle="bold"/>
     </LinearLayout>
 

@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -20,9 +21,11 @@ class NotificationListener : NotificationListenerService() {
         const val GMAIL_PACKAGE = "com.google.android.gm"
         const val SMS_PACKAGE = "com.android.mms"
         const val SMS_PACKAGE2 = "com.google.android.apps.messaging"
-        private var instance: NotificationListener? = null
         
+        private var instance: NotificationListener? = null
         fun getInstance(): NotificationListener? = instance
+        
+        fun getServiceContext(): Context? = instance?.applicationContext
     }
 
     override fun onCreate() {
@@ -72,7 +75,6 @@ class NotificationListener : NotificationListenerService() {
         val notification = sbn.notification
         val extras = notification.extras
         
-        // ✅ Récupère TOUTES les infos, y compris le texte complet
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() 
             ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG)?.toString()
             ?: "Sans expéditeur"
@@ -83,11 +85,8 @@ class NotificationListener : NotificationListenerService() {
             ?: "(Message vide)"
         
         val subText = extras.getCharSequence(Notification.EXTRA_SUB_TEXT)?.toString() ?: ""
-        val infoText = extras.getCharSequence(Notification.EXTRA_INFO_TEXT)?.toString() ?: ""
-        
         val fullContent = when {
             text.isNotEmpty() && subText.isNotEmpty() -> "$text\n$subText"
-            text.isNotEmpty() && infoText.isNotEmpty() -> "$text\n$infoText"
             else -> text
         }
         
@@ -99,6 +98,8 @@ class NotificationListener : NotificationListenerService() {
             time = sbn.postTime,
             packageName = pkg
         )
+        
+        // ✅ AJOUTE IMMÉDIATEMENT LE MESSAGE → s'affiche tout de suite !
         addMessage(message)
     }
     

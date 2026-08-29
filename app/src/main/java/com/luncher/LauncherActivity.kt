@@ -1,6 +1,7 @@
 package com.luncher
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.content.pm.ApplicationInfo
@@ -60,10 +61,14 @@ class LauncherActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timeRunnable: Runnable
     
+    // ✅ NOTIFICATIONS — Fenêtre persistante PAR-DESSUS TOUT
     private var notificationsContainer: View? = null
     private var notificationAdapter: NotificationAdapter? = null
     private val notificationsList = mutableListOf<Message>()
     private lateinit var windowManager: WindowManager
+    
+    // ✅ GARDE LA FENÊTRE TOUJOURS ACTIVE
+    private var isWindowAttached = false
 
     private val PREFS_NAME = "LuncherPrefs"
     private val KEY_WALLPAPER_URI = "wallpaper_uri"
@@ -135,6 +140,9 @@ class LauncherActivity : AppCompatActivity() {
         setupMessagesObserver()
         checkAllPermissions()
         requestOverlayPermission()
+        
+        // ✅ CRÉE LA FENÊTRE DE NOTIFICATIONS DÈS LE DÉMARRAGE
+        ensureNotificationWindow()
     }
 
     private fun checkAllPermissions() {
@@ -172,7 +180,7 @@ class LauncherActivity : AppCompatActivity() {
     
     private fun requestOverlayPermission() {
         if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "👉 Autorisez l'affichage par-dessus les autres apps", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "👉 Autorisez : Afficher par-dessus les autres applications", Toast.LENGTH_LONG).show()
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
         }
@@ -183,6 +191,7 @@ class LauncherActivity : AppCompatActivity() {
         return enabledListeners?.contains(packageName) == true
     }
 
+    // ✅ ÉCOUTE LES NOTIFICATIONS EN PERMANENCE
     private fun setupMessagesObserver() {
         CoroutineScope(Dispatchers.Main).launch {
             NotificationListener.messagesFlow.collect { messages ->
@@ -194,13 +203,16 @@ class LauncherActivity : AppCompatActivity() {
     private fun updateNotifications(messages: List<Message>) {
         notificationsList.clear()
         notificationsList.addAll(messages)
-        ensureNotificationContainer()
+        ensureNotificationWindow()  // ✅ S'assure que la fenêtre est visible
         notificationAdapter?.notifyDataSetChanged()
     }
 
-    private fun ensureNotificationContainer() {
-        if (notificationsContainer == null && Settings.canDrawOverlays(this)) {
-            val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    // ✅ CRÉE LA FENÊTRE FLOTTANTE — PAR-DESSUS TOUTES LES APPLICATIONS
+    private fun ensureNotificationWindow() {
+        if (!Settings.canDrawOverlays(this)) return
+        
+        if (notificationsContainer == null) {
+            val inflater = getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
             notificationsContainer = inflater.inflate(R.layout.popup_notifications_container, null)
             
             val recyclerView = notificationsContainer!!.findViewById<RecyclerView>(R.id.notifications_list)
@@ -209,7 +221,10 @@ class LauncherActivity : AppCompatActivity() {
             }
             recyclerView.adapter = notificationAdapter
             recyclerView.layoutManager = LinearLayoutManager(this)
-
+        }
+        
+        // ✅ SI LA FENÊTRE N'EST PAS AFFICHÉE → L'AFFICHE
+        if (!isWindowAttached) {
             val layoutParams = WindowManager.LayoutParams(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -219,19 +234,46 @@ class LauncherActivity : AppCompatActivity() {
                 },
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
-                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                // ✅ FLAG_SHOWN_WHEN_LOCKED = AFFICHE MÊME ÉCRAN VERROUILLÉ
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_SHOWN_WHEN_LOCKED or
+                WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
                 PixelFormat.TRANSLUCENT
             )
             layoutParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
             layoutParams.width = (resources.displayMetrics.widthPixels * 0.96).toInt()
-            layoutParams.y = (20 * resources.displayMetrics.density).toInt()
+            layoutParams.y = (16 * resources.displayMetrics.density).toInt()
 
             try {
                 windowManager.addView(notificationsContainer, layoutParams)
+                isWindowAttached = true
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        } else {
+            // ✅ MET À JOUR LA FENÊTRE SI DÉJÀ AFFICHÉE
+            try {
+                windowManager.updateViewLayout(notificationsContainer, WindowManager.LayoutParams(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        WindowManager.LayoutParams.TYPE_PHONE
+                    },
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                    WindowManager.LayoutParams.FLAG_SHOWN_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
+                    PixelFormat.TRANSLUCENT
+                ).apply {
+                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    width = (resources.displayMetrics.widthPixels * 0.96).toInt()
+                    y = (16 * resources.displayMetrics.density).toInt()
+                })
+            } catch (e: Exception) {}
         }
     }
 
@@ -399,7 +441,7 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ MÉTHODE CORRIGÉE : Récupère TOUTES les apps, surtout celles installées par l'utilisateur
+    // ✅ TOUTES LES APPLICATIONS — UTILISATEUR EN PREMIER
     private fun loadAllApps() {
         statusText.text = "🔄 Chargement des applications..."
         
@@ -407,14 +449,12 @@ class LauncherActivity : AppCompatActivity() {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            // ✅ MÉTHODE 1 : Récupère TOUTES les applications avec un launcher (icône visible)
             val launchIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL)
             
             for (ri in resolveInfos) {
                 try {
                     val packageName = ri.activityInfo.packageName
-                    // Ignore notre propre application
                     if (packageName == this@LauncherActivity.packageName) continue
                     
                     val appInfo = pm.getApplicationInfo(packageName, 0)
@@ -424,12 +464,9 @@ class LauncherActivity : AppCompatActivity() {
                     if (name.isNotEmpty() && !name.startsWith(".")) {
                         apps.add(AppInfo(name, packageName, icon))
                     }
-                } catch (e: Exception) {
-                    // Ignorer
-                }
+                } catch (e: Exception) {}
             }
             
-            // ✅ TRI : D'abord les apps installées par l'utilisateur, puis système
             val userApps = mutableListOf<AppInfo>()
             val systemApps = mutableListOf<AppInfo>()
             
@@ -440,16 +477,15 @@ class LauncherActivity : AppCompatActivity() {
                     val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                     
                     if (!isSystemApp || isUpdatedSystemApp) {
-                        userApps.add(app)  // ✅ Apps utilisateur + apps système mises à jour
+                        userApps.add(app)
                     } else {
-                        systemApps.add(app)  // Apps système pures
+                        systemApps.add(app)
                     }
                 } catch (e: Exception) {
                     userApps.add(app)
                 }
             }
             
-            // Tri alphabétique dans chaque groupe
             val sortedUser = userApps.sortedBy { it.name.lowercase() }
             val sortedSystem = systemApps.sortedBy { it.name.lowercase() }
             val finalList = sortedUser + sortedSystem
@@ -457,7 +493,7 @@ class LauncherActivity : AppCompatActivity() {
             withContext(Dispatchers.Main) {
                 allApps = finalList
                 adapter.setList(finalList)
-                statusText.text = "✅ ${finalList.size} applications chargées (${userApps.size} utilisateur)"
+                statusText.text = "✅ ${finalList.size} applications (${userApps.size} utilisateur)"
                 handler.postDelayed({ statusText.visibility = View.GONE }, 3000)
             }
         }
@@ -467,7 +503,12 @@ class LauncherActivity : AppCompatActivity() {
         super.onDestroy()
         handler.removeCallbacks(timeRunnable)
         notificationsContainer?.let {
-            try { windowManager.removeView(it) } catch (_: Exception) {}
+            try { 
+                if (isWindowAttached) {
+                    windowManager.removeView(it)
+                    isWindowAttached = false
+                }
+            } catch (_: Exception) {}
         }
     }
 }
