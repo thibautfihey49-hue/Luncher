@@ -51,6 +51,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var dragHandle: View
     private lateinit var drawerLayout: LinearLayout
     private lateinit var searchInput: EditText
+    private lateinit var searchBarContainer: View
     private lateinit var appsRecycler: RecyclerView
     private lateinit var rootLayout: View
     private lateinit var timeContainer: LinearLayout
@@ -126,6 +127,7 @@ class LauncherActivity : AppCompatActivity() {
         dragHandle = findViewById(R.id.drag_handle)
         drawerLayout = findViewById(R.id.drawer_layout)
         searchInput = findViewById(R.id.search_input)
+        searchBarContainer = findViewById(R.id.search_bar_container)
         appsRecycler = findViewById(R.id.apps_recycler)
         rootLayout = findViewById(R.id.root_layout)
         timeContainer = findViewById(R.id.time_container)
@@ -210,14 +212,38 @@ class LauncherActivity : AppCompatActivity() {
             true
         }
 
+        // 👇 FERMETURE DEPUIS LA BARRE DE RECHERCHE
+        searchBarContainer.setOnTouchListener { _, event ->
+            when (event.action) {
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.rawY
+                    drawerOffset = 0f
+                    true
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (isDrawerOpen) {
+                        val deltaY = event.rawY - startY
+                        if (deltaY > 15f) {
+                            drawerOffset = deltaY
+                            drawerLayout.translationY = deltaY
+                        }
+                    }
+                    true
+                }
+                MotionEvent.ACTION_UP -> {
+                    if (drawerOffset > touchThreshold) {
+                        closeDrawer()
+                    } else if (isDrawerOpen) {
+                        resetDrawerPosition()
+                    }
+                    drawerOffset = 0f
+                    true
+                }
+            }
+        }
+        
+        // 👇 FERMETURE DEPUIS LE RESTE DU TIROIR
         drawerLayout.setOnTouchListener { _, event ->
-            val drawerLocation = IntArray(2)
-            drawerLayout.getLocationOnScreen(drawerLocation)
-            val drawerTop = drawerLocation[1]
-            val drawerHeight = drawerLayout.height
-            // ZONE ÉLARGIE : 60% DU HAUT DU TIROIR (pas seulement la moitié)
-            val zoneFermetureLimite = drawerTop + (drawerHeight * 0.6f)
-            
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     startY = event.rawY
@@ -226,9 +252,7 @@ class LauncherActivity : AppCompatActivity() {
                 MotionEvent.ACTION_MOVE -> {
                     if (isDrawerOpen) {
                         val deltaY = event.rawY - startY
-                        val touchY = event.rawY
-                        // Fermeture active DANS LES 60% SUPÉRIEURS DU TIROIR ENTIER
-                        if (deltaY > 0 && touchY < zoneFermetureLimite) {
+                        if (deltaY > 0) {
                             drawerOffset = deltaY
                             drawerLayout.translationY = deltaY
                         }
