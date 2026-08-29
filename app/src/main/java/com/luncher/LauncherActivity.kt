@@ -61,13 +61,10 @@ class LauncherActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var timeRunnable: Runnable
     
-    // ✅ NOTIFICATIONS — Fenêtre persistante PAR-DESSUS TOUT
     private var notificationsContainer: View? = null
     private var notificationAdapter: NotificationAdapter? = null
     private val notificationsList = mutableListOf<Message>()
     private lateinit var windowManager: WindowManager
-    
-    // ✅ GARDE LA FENÊTRE TOUJOURS ACTIVE
     private var isWindowAttached = false
 
     private val PREFS_NAME = "LuncherPrefs"
@@ -140,8 +137,6 @@ class LauncherActivity : AppCompatActivity() {
         setupMessagesObserver()
         checkAllPermissions()
         requestOverlayPermission()
-        
-        // ✅ CRÉE LA FENÊTRE DE NOTIFICATIONS DÈS LE DÉMARRAGE
         ensureNotificationWindow()
     }
 
@@ -191,7 +186,6 @@ class LauncherActivity : AppCompatActivity() {
         return enabledListeners?.contains(packageName) == true
     }
 
-    // ✅ ÉCOUTE LES NOTIFICATIONS EN PERMANENCE
     private fun setupMessagesObserver() {
         CoroutineScope(Dispatchers.Main).launch {
             NotificationListener.messagesFlow.collect { messages ->
@@ -203,7 +197,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun updateNotifications(messages: List<Message>) {
         notificationsList.clear()
         notificationsList.addAll(messages)
-        ensureNotificationWindow()  // ✅ S'assure que la fenêtre est visible
+        ensureNotificationWindow()
         notificationAdapter?.notifyDataSetChanged()
     }
 
@@ -223,7 +217,6 @@ class LauncherActivity : AppCompatActivity() {
             recyclerView.layoutManager = LinearLayoutManager(this)
         }
         
-        // ✅ SI LA FENÊTRE N'EST PAS AFFICHÉE → L'AFFICHE
         if (!isWindowAttached) {
             val layoutParams = WindowManager.LayoutParams(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -234,10 +227,9 @@ class LauncherActivity : AppCompatActivity() {
                 },
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                // ✅ FLAG_SHOWN_WHEN_LOCKED = AFFICHE MÊME ÉCRAN VERROUILLÉ
+                // ✅ FLAGS CORRIGÉS
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
                 WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                WindowManager.LayoutParams.FLAG_SHOWN_WHEN_LOCKED or
                 WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
                 PixelFormat.TRANSLUCENT
             )
@@ -252,27 +244,11 @@ class LauncherActivity : AppCompatActivity() {
                 e.printStackTrace()
             }
         } else {
-            // ✅ MET À JOUR LA FENÊTRE SI DÉJÀ AFFICHÉE
             try {
-                windowManager.updateViewLayout(notificationsContainer, WindowManager.LayoutParams(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                    } else {
-                        @Suppress("DEPRECATION")
-                        WindowManager.LayoutParams.TYPE_PHONE
-                    },
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
-                    WindowManager.LayoutParams.FLAG_SHOWN_WHEN_LOCKED or
-                    WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM,
-                    PixelFormat.TRANSLUCENT
-                ).apply {
-                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                    width = (resources.displayMetrics.widthPixels * 0.96).toInt()
-                    y = (16 * resources.displayMetrics.density).toInt()
-                })
+                val params = notificationsContainer!!.layoutParams as WindowManager.LayoutParams
+                params.width = (resources.displayMetrics.widthPixels * 0.96).toInt()
+                params.y = (16 * resources.displayMetrics.density).toInt()
+                windowManager.updateViewLayout(notificationsContainer, params)
             } catch (e: Exception) {}
         }
     }
@@ -441,7 +417,6 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ TOUTES LES APPLICATIONS — UTILISATEUR EN PREMIER
     private fun loadAllApps() {
         statusText.text = "🔄 Chargement des applications..."
         
