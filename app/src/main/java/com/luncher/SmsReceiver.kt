@@ -3,22 +3,40 @@ package com.luncher
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.provider.Telephony
+import android.telephony.SmsMessage
 
 class SmsReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (Telephony.Sms.Intents.SMS_RECEIVED_ACTION == intent.action) {
-            val messages = Telephony.Sms.Intents.getMessagesFromIntent(intent)
-            for ((index, sms) in messages.withIndex()) {
+        if (intent.action == Telephony.Sms.Intents.SMS_RECEIVED_ACTION) {
+            
+            val messages = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                Telephony.Sms.Intents.getMessagesFromIntent(intent)
+            } else {
+                @Suppress("DEPRECATION")
+                val pdus = intent.extras?.get("pdus") as? Array<*>
+                pdus?.map { SmsMessage.createFromPdu(it as ByteArray) } ?: emptyList()
+            }
+            
+            for (sms in messages) {
+                val sender = sms.displayOriginatingAddress
+                val body = sms.messageBody
+                val time = sms.timestampMillis
+                
                 val message = Message(
-                    id = "sms_${System.currentTimeMillis()}_$index",
+                    id = "sms_${time}_${sender.hashCode()}",
                     type = "SMS",
-                    sender = sms.displayOriginatingAddress ?: "Inconnu",
-                    content = sms.displayMessageBody ?: "",
-                    time = System.currentTimeMillis(),
+                    sender = sender,
+                    content = body,
+                    time = time,
                     packageName = "com.android.mms"
                 )
-                NotificationListener.messagesFlow.value = listOf(message) + NotificationListener.messagesFlow.value
+                
+                // ✅ Affiche la popup
+                MessagePopupActivity.show(context, message)
+                
+                // ✅ LE SMS CONTINUE VERS LA BOÎTE DE RÉCEPTION — PAS DE BLOCAGE !
             }
         }
     }

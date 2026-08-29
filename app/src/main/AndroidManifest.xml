@@ -8,7 +8,6 @@
     <uses-permission android:name="android.permission.RECEIVE_SMS" />
     <uses-permission android:name="android.permission.SEND_SMS" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
 
     <application
         android:allowBackup="true"
@@ -28,14 +27,14 @@
             </intent-filter>
         </activity>
 
-        <!-- ✅ ACTIVITÉ POPUP DE RÉPONSE -->
         <activity
             android:name=".MessagePopupActivity"
             android:exported="false"
             android:theme="@style/Theme.Luncher.Transparent"
             android:excludeFromRecents="true"
             android:taskAffinity=""
-            android:launchMode="singleInstance"/>
+            android:launchMode="singleInstance"
+            android:windowSoftInputMode="adjustResize"/>
 
         <service
             android:name=".NotificationListener"
@@ -48,7 +47,8 @@
 
         <receiver
             android:name=".SmsReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:priority="999">
             <intent-filter>
                 <action android:name="android.provider.Telephony.SMS_RECEIVED" />
             </intent-filter>

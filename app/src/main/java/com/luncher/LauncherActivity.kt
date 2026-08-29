@@ -1,7 +1,6 @@
 package com.luncher
 
 import android.Manifest
-import android.app.AppOpsManager
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
@@ -10,7 +9,6 @@ import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.BitmapDrawable
-import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -19,8 +17,6 @@ import android.os.Looper
 import android.provider.Settings
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
-import android.view.Gravity
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -97,12 +93,10 @@ class LauncherActivity : AppCompatActivity() {
         permissions.entries.forEach { 
             if (!it.value) {
                 allGranted = false
-                Toast.makeText(this, "⚠️ Permission refusée : ${it.key}", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "⚠️ Refusé : ${it.key}", Toast.LENGTH_LONG).show()
             }
         }
-        if (allGranted) {
-            checkAllPermissionsAndProceed()
-        }
+        if (allGranted) checkAllPermissionsAndProceed()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -159,16 +153,13 @@ class LauncherActivity : AppCompatActivity() {
         val permissionsNeeded = mutableListOf<String>()
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) != PackageManager.PERMISSION_GRANTED)
                 permissionsNeeded.add(Manifest.permission.READ_MEDIA_IMAGES)
-            }
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
                 permissionsNeeded.add(Manifest.permission.POST_NOTIFICATIONS)
-            }
         } else {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                 permissionsNeeded.add(Manifest.permission.READ_EXTERNAL_STORAGE)
-            }
         }
         
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
@@ -184,8 +175,7 @@ class LauncherActivity : AppCompatActivity() {
         
         if (!isNotificationListenerEnabled()) {
             Toast.makeText(this, "👉 ÉTAPE 1/2 : Accès aux notifications", Toast.LENGTH_LONG).show()
-            val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
-            startActivity(intent)
+            startActivity(Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS"))
         } else {
             hidePermissionScreen()
         }
@@ -193,41 +183,23 @@ class LauncherActivity : AppCompatActivity() {
         handler.postDelayed({ checkAllPermissionsAndProceed() }, 2500)
     }
 
-    private fun hasUsageStatsPermission(): Boolean {
-        val appOps = getSystemService(Context.APP_OPS_SERVICE) as AppOpsManager
-        val mode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            appOps.unsafeCheckOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
-        } else {
-            @Suppress("DEPRECATION")
-            appOps.checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, android.os.Process.myUid(), packageName)
-        }
-        return mode == AppOpsManager.MODE_ALLOWED
-    }
-
     private fun checkAllPermissionsAndProceed() {
-        val hasNotifAccess = isNotificationListenerEnabled()
-        
-        if (hasNotifAccess) {
-            Toast.makeText(this, "✅ Toutes les permissions accordées !", Toast.LENGTH_LONG).show()
+        if (isNotificationListenerEnabled()) {
+            Toast.makeText(this, "✅ Toutes permissions accordées !", Toast.LENGTH_LONG).show()
             hidePermissionScreen()
         } else {
-            val missing = mutableListOf<String>()
-            if (!hasNotifAccess) missing.add("• Accès aux notifications")
-            if (missing.isNotEmpty()) {
-                Toast.makeText(this, "⚠️ Il manque :\n${missing.joinToString("\n")}\n\nAppuyez à nouveau", Toast.LENGTH_LONG).show()
-            }
+            Toast.makeText(this, "⚠️ Accès notifications manquant", Toast.LENGTH_LONG).show()
         }
     }
 
     private fun isNotificationListenerEnabled(): Boolean {
-        val enabledListeners = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
-        return enabledListeners?.contains(packageName) == true
+        val enabled = Settings.Secure.getString(contentResolver, "enabled_notification_listeners")
+        return enabled?.contains(packageName) == true
     }
 
     private fun setupDraggableTime() {
         var dX = 0f
         var dY = 0f
-        
         timeContainer.setOnTouchListener { view, event ->
             when (event.actionMasked) {
                 android.view.MotionEvent.ACTION_DOWN -> {
@@ -262,10 +234,7 @@ class LauncherActivity : AppCompatActivity() {
     }
 
     private fun setupLongPressActions() {
-        rootLayout.setOnLongClickListener {
-            changerFondEcran()
-            true
-        }
+        rootLayout.setOnLongClickListener { changerFondEcran(); true }
         heureTexte.setOnLongClickListener { showColorPickerDialog(); true }
         dateTexte.setOnLongClickListener { showColorPickerDialog(); true }
     }
@@ -299,8 +268,7 @@ class LauncherActivity : AppCompatActivity() {
             Manifest.permission.READ_EXTERNAL_STORAGE
         }
         if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
-            val intent = Intent(Intent.ACTION_PICK)
-            intent.type = "image/*"
+            val intent = Intent(Intent.ACTION_PICK).setType("image/*")
             pickImageLauncher.launch(Intent.createChooser(intent, "Choisir une image"))
         } else {
             requestPermissionLauncher.launch(arrayOf(permission))
@@ -349,11 +317,8 @@ class LauncherActivity : AppCompatActivity() {
         adapter = AppAdapter { app ->
             try {
                 val launchIntent = packageManager.getLaunchIntentForPackage(app.packageName)
-                if (launchIntent != null) {
-                    startActivity(launchIntent)
-                } else {
-                    Toast.makeText(this, "Impossible d'ouvrir ${app.name}", Toast.LENGTH_SHORT).show()
-                }
+                if (launchIntent != null) startActivity(launchIntent)
+                else Toast.makeText(this, "Impossible d'ouvrir ${app.name}", Toast.LENGTH_SHORT).show()
             } catch (e: Exception) {
                 Toast.makeText(this, "Erreur : ${e.message}", Toast.LENGTH_SHORT).show()
             }
@@ -366,8 +331,7 @@ class LauncherActivity : AppCompatActivity() {
         searchInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) = Unit
             override fun onTextChanged(s: CharSequence?, x: Int, y: Int, z: Int) {
-                val q = s?.toString() ?: ""
-                adapter.filter(q)
+                adapter.filter(s?.toString() ?: "")
             }
             override fun afterTextChanged(s: Editable?) = Unit
         })
@@ -375,13 +339,8 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun toggleDrawer() {
         isDrawerOpen = !isDrawerOpen
-        if (isDrawerOpen) {
-            drawerLayout.visibility = View.VISIBLE
-            toggleBtn.rotation = 180f
-        } else {
-            drawerLayout.visibility = View.GONE
-            toggleBtn.rotation = 0f
-        }
+        drawerLayout.visibility = if (isDrawerOpen) View.VISIBLE else View.GONE
+        toggleBtn.rotation = if (isDrawerOpen) 180f else 0f
     }
 
     private fun loadAllApps() {
@@ -394,8 +353,6 @@ class LauncherActivity : AppCompatActivity() {
             val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_ALL)
             
-            Log.d("LUNCHER", "Apps trouvées: ${resolveInfos.size}")
-            
             for (ri in resolveInfos) {
                 try {
                     val packageName = ri.activityInfo.packageName
@@ -403,17 +360,14 @@ class LauncherActivity : AppCompatActivity() {
                     
                     val appInfo = pm.getApplicationInfo(packageName, 0)
                     val name = appInfo.loadLabel(pm).toString().trim()
-                    
                     if (name.isEmpty() || name.startsWith(".")) continue
                     
-                    val icon: Drawable = appInfo.loadIcon(pm)
+                    val icon = appInfo.loadIcon(pm)
                     val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
                     val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
                     
                     apps.add(AppInfo(name, packageName, icon, isSystemApp && !isUpdatedSystemApp))
-                } catch (e: Exception) {
-                    Log.e("LUNCHER", "Erreur", e)
-                }
+                } catch (e: Exception) { }
             }
             
             val userApps = apps.filter { !it.isSystemApp }.sortedBy { it.name.lowercase() }

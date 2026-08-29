@@ -6,8 +6,10 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.telephony.SmsManager
+import android.view.Gravity
 import android.view.View
 import android.view.Window
+import android.view.WindowManager
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ImageView
@@ -40,6 +42,13 @@ class MessagePopupActivity : Activity() {
         requestWindowFeature(Window.FEATURE_NO_TITLE)
         setContentView(R.layout.popup_message)
 
+        val window = window
+        val params = window.attributes
+        params.gravity = Gravity.CENTER
+        params.width = (resources.displayMetrics.widthPixels * 0.90).toInt()
+        params.height = WindowManager.LayoutParams.WRAP_CONTENT
+        window.attributes = params
+
         val type = intent.getStringExtra(EXTRA_TYPE) ?: "SMS"
         val sender = intent.getStringExtra(EXTRA_SENDER) ?: ""
         val content = intent.getStringExtra(EXTRA_CONTENT) ?: ""
@@ -57,19 +66,19 @@ class MessagePopupActivity : Activity() {
         when (type) {
             "SMS" -> {
                 icon.setImageResource(android.R.drawable.ic_dialog_email)
-                title.text = "📩 SMS"
+                title.text = "📩 SMS reçu"
             }
             "WHATSAPP" -> {
                 icon.setImageResource(android.R.drawable.ic_menu_call)
-                title.text = "💬 WhatsApp"
+                title.text = "💬 Message WhatsApp"
             }
             "GMAIL" -> {
                 icon.setImageResource(android.R.drawable.ic_dialog_info)
-                title.text = "📧 Gmail"
+                title.text = "📧 Email Gmail"
             }
         }
 
-        senderTv.text = sender
+        senderTv.text = "De : $sender"
         contentTv.text = content
 
         btnClose.setOnClickListener { finish() }
@@ -77,12 +86,10 @@ class MessagePopupActivity : Activity() {
         btnOpen.setOnClickListener {
             try {
                 val launchIntent = packageManager.getLaunchIntentForPackage(packageName)
-                if (launchIntent != null) {
-                    startActivity(launchIntent)
-                }
+                if (launchIntent != null) startActivity(launchIntent)
                 finish()
             } catch (e: Exception) {
-                Toast.makeText(this, "Impossible d'ouvrir l'application", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Impossible d'ouvrir", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -101,33 +108,31 @@ class MessagePopupActivity : Activity() {
 
     private fun sendSms(number: String, message: String) {
         try {
-            val smsManager = SmsManager.getDefault()
-            smsManager.sendTextMessage(number, null, message, null, null)
+            SmsManager.getDefault().sendTextMessage(number, null, message, null, null)
             Toast.makeText(this, "✅ SMS envoyé !", Toast.LENGTH_SHORT).show()
         } catch (e: Exception) {
-            Toast.makeText(this, "❌ Erreur : ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "❌ Erreur", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun openWhatsApp(number: String, message: String) {
         try {
-            val cleanNumber = number.replace(Regex("[^+0-9]"), "")
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("whatsapp://send?phone=$cleanNumber&text=${Uri.encode(message)}"))
+            val clean = number.replace(Regex("[^+0-9]"), "")
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("whatsapp://send?phone=$clean&text=${Uri.encode(message)}"))
             intent.setPackage("com.whatsapp")
             startActivity(intent)
             finish()
         } catch (e: Exception) {
-            Toast.makeText(this, "❌ WhatsApp non disponible", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "❌ WhatsApp indisponible", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun openGmail(sender: String) {
         try {
-            val intent = Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$sender"))
-            startActivity(intent)
+            startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:$sender")))
             finish()
         } catch (e: Exception) {
-            Toast.makeText(this, "❌ Gmail non disponible", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "❌ Gmail indisponible", Toast.LENGTH_SHORT).show()
         }
     }
 }

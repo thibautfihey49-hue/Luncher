@@ -4,9 +4,88 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="#00000000">
+    android:background="#000000">
 
-    <!-- ✅ ÉCRAN DE DEMANDE DE PERMISSIONS -->
+    <LinearLayout
+        android:id="@+id/time_container"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="80dp"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/heure_texte"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="00:00"
+            android:textSize="72sp"
+            android:textStyle="bold"
+            android:textColor="#FFFFFF"
+            android:fontFamily="sans-serif-light"/>
+
+        <TextView
+            android:id="@+id/date_texte"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Lundi 1 Janvier"
+            android:textSize="18sp"
+            android:textColor="#E0FFFFFF"
+            android:layout_marginTop="4dp"/>
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <ImageView
+        android:id="@+id/toggle_btn"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center_horizontal"
+        android:src="@drawable/ic_drawer"
+        android:layout_marginBottom="16dp"
+        android:tint="#FFFFFF"/>
+
+    <LinearLayout
+        android:id="@+id/drawer_layout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:background="#E6000000"
+        android:elevation="24dp"
+        android:visibility="gone">
+
+        <EditText
+            android:id="@+id/search_input"
+            android:layout_width="match_parent"
+            android:layout_height="45dp"
+            android:hint="🔍 Rechercher une application..."
+            android:textColor="#FFFFFF"
+            android:textColorHint="#80FFFFFF"
+            android:background="#20FFFFFF"
+            android:paddingHorizontal="16dp"
+            android:layout_margin="12dp"
+            android:inputType="textFilter"/>
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Chargement..."
+            android:textColor="#B0FFFFFF"
+            android:gravity="center"
+            android:padding="8dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/apps_recycler"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:paddingHorizontal="8dp"/>
+    </LinearLayout>
+
     <LinearLayout
         android:id="@+id/permission_overlay"
         android:layout_width="match_parent"
@@ -14,150 +93,36 @@
         android:orientation="vertical"
         android:background="#FF000000"
         android:gravity="center"
-        android:padding="30dp"
+        android:padding="32dp"
         android:visibility="gone">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="🔐 Autorisations requises"
-            android:textSize="28sp"
+            android:text="🔐 Permissions nécessaires"
+            android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="#FFFFFF"
-            android:layout_marginBottom="30dp"/>
+            android:gravity="center"
+            android:layout_marginBottom="24dp"/>
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Pour que Luncher fonctionne correctement, vous devez accorder ces 3 autorisations :"
-            android:textSize="16sp"
+            android:text="Pour recevoir les messages :\n\n• Accès aux notifications\n• Recevoir les SMS"
+            android:textSize="15sp"
             android:textColor="#E0FFFFFF"
             android:gravity="center"
-            android:layout_marginBottom="25dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="1️⃣ Accès aux notifications\n2️⃣ Afficher par-dessus les autres apps\n3️⃣ Accès à la liste des applications"
-            android:textSize="15sp"
-            android:textColor="#B0FFFFFF"
-            android:padding="20dp"
-            android:background="#1FFFFFFF"
-            android:layout_marginBottom="35dp"/>
+            android:layout_marginBottom="32dp"/>
 
         <Button
             android:id="@+id/btn_grant_all"
             android:layout_width="match_parent"
             android:layout_height="55dp"
-            android:text="✅ ACCORDER TOUTES LES AUTORISATIONS"
+            android:text="✅ Accorder toutes les permissions"
             android:textSize="16sp"
-            android:textStyle="bold"
-            android:backgroundTint="#4CAF50"
-            android:textColor="#FFFFFF"
-            android:elevation="8dp"/>
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="\n💡 Vous serez redirigé(e) vers les paramètres pour chaque autorisation.\nRevenez à Luncher après chaque étape."
-            android:textSize="13sp"
-            android:textColor="#80FFFFFF"
-            android:gravity="center"/>
-    </LinearLayout>
-
-    <!-- Zone supérieure : Heure et Date -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <LinearLayout
-            android:id="@+id/time_container"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:gravity="center"
-            android:padding="20dp">
-
-            <TextView
-                android:id="@+id/heure_texte"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="00:00"
-                android:textSize="72sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:fontFamily="sans-serif-light"/>
-
-            <TextView
-                android:id="@+id/date_texte"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Lundi 1 Janvier"
-                android:textSize="18sp"
-                android:textColor="#F0FFFFFF"
-                android:layout_marginTop="4dp"/>
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/status_text"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Chargement..."
-            android:textSize="14sp"
-            android:textColor="#80FFFFFF"
-            android:layout_marginTop="15dp"
-            android:visibility="visible"
-            android:gravity="center"/>
-    </LinearLayout>
-
-    <!-- Bouton pour ouvrir/fermer le tiroir -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center"
-        android:paddingVertical="10dp">
-
-        <ImageView
-            android:id="@+id/toggle_btn"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/ic_drawer_handle"
-            android:background="#20FFFFFF"
-            android:padding="12dp"
-            android:layout_gravity="center"/>
-    </LinearLayout>
-
-    <!-- Tiroir d'applications -->
-    <LinearLayout
-        android:id="@+id/drawer_layout"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1.2"
-        android:orientation="vertical"
-        android:background="#E6000000"
-        android:elevation="24dp">
-
-        <EditText
-            android:id="@+id/search_input"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:hint="🔍 Rechercher une application..."
-            android:textColor="#FFFFFF"
-            android:textColorHint="#80FFFFFF"
-            android:background="#1FFFFFFF"
-            android:layout_margin="12dp"
-            android:paddingHorizontal="16dp"
-            android:inputType="textCapWords|textNoSuggestions"/>
-
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/apps_recycler"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingVertical="8dp"/>
+            android:backgroundTint="#2563EB"
+            android:textColor="#FFFFFF"/>
     </LinearLayout>
 
 </LinearLayout>
