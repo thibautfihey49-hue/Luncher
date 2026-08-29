@@ -110,7 +110,7 @@ class LauncherActivity : AppCompatActivity() {
             }
         }
         if (allGranted) {
-            checkAllPermissions()
+            checkAllPermissionsAndProceed()
         }
     }
 
@@ -145,7 +145,6 @@ class LauncherActivity : AppCompatActivity() {
         loadTextColor()
         loadTimePosition()
         
-        // ✅ AFFICHE L'ÉCRAN DE PERMISSIONS AU DÉMARRAGE
         if (!prefs.getBoolean(KEY_PERMISSIONS_DONE, false)) {
             showPermissionScreen()
         } else {
@@ -155,7 +154,6 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ ÉCRAN DE DEMANDE DE PERMISSIONS
     private fun showPermissionScreen() {
         permissionOverlay.visibility = View.VISIBLE
         permissionOverlay.findViewById<Button>(R.id.btn_grant_all).setOnClickListener {
@@ -171,7 +169,6 @@ class LauncherActivity : AppCompatActivity() {
         ensureNotificationWindow()
     }
 
-    // ✅ DEMANDE TOUTES LES PERMISSIONS UNE PAR UNE
     private fun requestAllPermissionsSequentially() {
         val permissionsNeeded = mutableListOf<String>()
         
@@ -194,33 +191,26 @@ class LauncherActivity : AppCompatActivity() {
             permissionsNeeded.add(Manifest.permission.SEND_SMS)
         }
         
-        // ✅ Demande des permissions classiques
         if (permissionsNeeded.isNotEmpty()) {
             requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
         }
         
-        // ✅ Demande ACCÈS AUX NOTIFICATIONS
         if (!isNotificationListenerEnabled()) {
             Toast.makeText(this, "👉 ÉTAPE 1/3 : Accès aux notifications", Toast.LENGTH_LONG).show()
             val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
             startActivity(intent)
-        }
-        
-        // ✅ Demande AFFICHAGE PAR-DESSUS LES APPS
-        if (!Settings.canDrawOverlays(this)) {
+        } else if (!Settings.canDrawOverlays(this)) {
             Toast.makeText(this, "👉 ÉTAPE 2/3 : Afficher par-dessus les applications", Toast.LENGTH_LONG).show()
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
-        }
-        
-        // ✅ Demande ACCÈS À LA LISTE DES APPLICATIONS
-        if (!hasUsageStatsPermission()) {
-            Toast.makeText(this, "👉 ÉTAPE 3/3 : Accès aux infos d'utilisation (pour voir TOUTES vos apps)", Toast.LENGTH_LONG).show()
+        } else if (!hasUsageStatsPermission()) {
+            Toast.makeText(this, "👉 ÉTAPE 3/3 : Accès aux infos d'utilisation", Toast.LENGTH_LONG).show()
             val intent = Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)
             startActivity(intent)
+        } else {
+            hidePermissionScreen()
         }
         
-        // ✅ Vérifie après un délai
         handler.postDelayed({ checkAllPermissionsAndProceed() }, 3000)
     }
 
@@ -248,7 +238,9 @@ class LauncherActivity : AppCompatActivity() {
             if (!hasNotifAccess) missing.add("• Accès notifications")
             if (!hasOverlay) missing.add("• Affichage par-dessus")
             if (!hasUsageAccess) missing.add("• Accès liste des applications")
-            Toast.makeText(this, "⚠️ Il manque :\n${missing.joinToString("\n")}\n\nAppuyez à nouveau sur le bouton", Toast.LENGTH_LONG).show()
+            if (missing.isNotEmpty()) {
+                Toast.makeText(this, "⚠️ Il manque :\n${missing.joinToString("\n")}\n\nAppuyez à nouveau sur le bouton", Toast.LENGTH_LONG).show()
+            }
         }
     }
 
@@ -486,7 +478,6 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ CHARGE TOUTES LES APPLICATIONS — MÉTHODE FORCÉE
     private fun loadAllApps() {
         statusText.text = "🔄 Chargement complet des applications..."
         
@@ -494,7 +485,6 @@ class LauncherActivity : AppCompatActivity() {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            // ✅ MÉTHODE 1 : Toutes les apps avec un launcher
             val mainIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
             val resolveInfos = pm.queryIntentActivities(mainIntent, PackageManager.MATCH_ALL)
             
@@ -520,7 +510,6 @@ class LauncherActivity : AppCompatActivity() {
                 }
             }
             
-            // ✅ TRI : Apps UTILISATEUR D'ABORD, PUIS SYSTÈME
             val userApps = apps.filter { !it.isSystemApp }.sortedBy { it.name.lowercase() }
             val systemApps = apps.filter { it.isSystemApp }.sortedBy { it.name.lowercase() }
             val finalList = userApps + systemApps
