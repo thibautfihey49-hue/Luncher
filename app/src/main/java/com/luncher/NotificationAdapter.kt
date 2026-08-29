@@ -62,7 +62,8 @@ class NotificationAdapter(
         holder.icon.setImageResource(iconRes)
         holder.title.text = titleText
         holder.sender.text = msg.sender
-        holder.content.text = msg.content
+        holder.content.text = msg.content  // ✅ TEXTE COMPLET DU MESSAGE !
+        holder.content.maxLines = 8        // ✅ JUSQU'À 8 LIGNES AFFICHÉES !
         holder.itemView.background = bgDrawable
         
         holder.btnClose.setOnClickListener {

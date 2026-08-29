@@ -3,27 +3,28 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="18dp"
-    android:layout_marginBottom="14dp"
-    android:elevation="32dp">
+    android:padding="20dp"
+    android:layout_marginHorizontal="8dp"
+    android:layout_marginBottom="12dp"
+    android:elevation="40dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:gravity="top">
 
         <LinearLayout
-            android:layout_width="44dp"
-            android:layout_height="44dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:background="#FFFFFF30"
             android:gravity="center"
             android:layout_marginEnd="14dp">
             
             <ImageView
                 android:id="@+id/notif_icon"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
                 android:tint="#FFFFFF"/>
         </LinearLayout>
 
@@ -37,7 +38,7 @@
                 android:id="@+id/notif_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="15sp"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"/>
 
@@ -45,7 +46,7 @@
                 android:id="@+id/notif_sender"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="13sp"
+                android:textSize="14sp"
                 android:textColor="#F0FFFFFF"
                 android:layout_marginTop="2dp"/>
 
@@ -53,23 +54,24 @@
                 android:id="@+id/notif_content"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textSize="14sp"
-                android:textColor="#E0FFFFFF"
-                android:layout_marginTop="6dp"
-                android:maxLines="4"
-                android:ellipsize="end"/>
+                android:textSize="15sp"
+                android:textColor="#FFFFFF"
+                android:layout_marginTop="8dp"
+                android:maxLines="8"
+                android:scrollbars="vertical"
+                android:ellipsize="none"/>
         </LinearLayout>
 
         <Button
             android:id="@+id/btn_close"
             android:layout_width="wrap_content"
-            android:layout_height="34dp"
-            android:text="✕ Fermer"
-            android:textSize="12sp"
+            android:layout_height="36dp"
+            android:text="✕"
+            android:textSize="14sp"
             android:backgroundTint="#FFFFFF30"
             android:textColor="#FFFFFF"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:layout_marginStart="8dp"
             android:elevation="0dp"/>
     </LinearLayout>
@@ -78,7 +80,7 @@
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="#20FFFFFF"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:layout_marginBottom="12dp"/>
 
     <LinearLayout
@@ -92,9 +94,9 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="Écrivez votre réponse..."
+            android:hint="Votre réponse..."
             android:textSize="14sp"
-            android:minHeight="44dp"
+            android:minHeight="48dp"
             android:maxLines="3"
             android:background="#FFFFFF15"
             android:textColor="#FFFFFF"
@@ -105,14 +107,14 @@
         <Button
             android:id="@+id/btn_send_reply"
             android:layout_width="wrap_content"
-            android:layout_height="44dp"
-            android:text="➤ Envoyer"
+            android:layout_height="48dp"
+            android:text="Envoyer"
             android:textSize="13sp"
             android:backgroundTint="#FFFFFF"
             android:textColor="#000000"
             android:layout_marginStart="10dp"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:paddingStart="18dp"
+            android:paddingEnd="18dp"
             android:textStyle="bold"/>
     </LinearLayout>
 

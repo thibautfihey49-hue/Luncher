@@ -25,6 +25,7 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -91,7 +92,13 @@ class LauncherActivity : AppCompatActivity() {
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
-    ) { }
+    ) { permissions ->
+        permissions.entries.forEach { 
+            if (!it.value) {
+                Toast.makeText(this, "⚠️ Permission requise : ${it.key}", Toast.LENGTH_LONG).show()
+            }
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -124,6 +131,7 @@ class LauncherActivity : AppCompatActivity() {
         loadAllApps()
         setupMessagesObserver()
         checkAllPermissions()
+        requestOverlayPermission()
     }
 
     private fun checkAllPermissions() {
@@ -152,13 +160,17 @@ class LauncherActivity : AppCompatActivity() {
             requestPermissionLauncher.launch(permissionsNeeded.toTypedArray())
         }
         
-        if (!Settings.canDrawOverlays(this)) {
-            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
+        if (!isNotificationListenerEnabled()) {
+            Toast.makeText(this, "👉 Activez l'accès aux notifications pour Luncher", Toast.LENGTH_LONG).show()
+            val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
             startActivity(intent)
         }
-        
-        if (!isNotificationListenerEnabled()) {
-            val intent = Intent("android.settings.ACTION_NOTIFICATION_LISTENER_SETTINGS")
+    }
+    
+    private fun requestOverlayPermission() {
+        if (!Settings.canDrawOverlays(this)) {
+            Toast.makeText(this, "👉 Autorisez l'affichage par-dessus les autres apps", Toast.LENGTH_LONG).show()
+            val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
         }
     }
@@ -183,6 +195,7 @@ class LauncherActivity : AppCompatActivity() {
         notificationAdapter?.notifyDataSetChanged()
     }
 
+    // ✅ CRÉE LA FENÊTRE DES NOTIFICATIONS PAR-DESSUS TOUTES LES APPS
     private fun ensureNotificationContainer() {
         if (notificationsContainer == null && Settings.canDrawOverlays(this)) {
             val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -195,6 +208,7 @@ class LauncherActivity : AppCompatActivity() {
             recyclerView.adapter = notificationAdapter
             recyclerView.layoutManager = LinearLayoutManager(this)
 
+            // ✅ TYPE_APPLICATION_OVERLAY = S'AFFICHE PAR-DESSUS TOUT !
             val layoutParams = WindowManager.LayoutParams(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -204,7 +218,8 @@ class LauncherActivity : AppCompatActivity() {
                 },
                 WindowManager.LayoutParams.MATCH_PARENT,
                 WindowManager.LayoutParams.WRAP_CONTENT,
-                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
                 PixelFormat.TRANSLUCENT
             )
             layoutParams.gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
@@ -216,6 +231,26 @@ class LauncherActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
+        } else if (notificationsContainer != null && Settings.canDrawOverlays(this)) {
+            try {
+                windowManager.updateViewLayout(notificationsContainer, WindowManager.LayoutParams(
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        WindowManager.LayoutParams.TYPE_PHONE
+                    },
+                    WindowManager.LayoutParams.MATCH_PARENT,
+                    WindowManager.LayoutParams.WRAP_CONTENT,
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
+                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
+                    PixelFormat.TRANSLUCENT
+                ).apply {
+                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    width = (resources.displayMetrics.widthPixels * 0.96).toInt()
+                    y = (20 * resources.displayMetrics.density).toInt()
+                })
+            } catch (e: Exception) {}
         }
     }
 
@@ -374,13 +409,12 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ AFFICHE TOUTES LES APPLICATIONS — SANS AUCUN FILTRE !
+    // ✅ TOUTES LES APPLICATIONS — SANS FILTRE
     private fun loadAllApps() {
         CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            // Récupère TOUTES les applications installées — AUCUN FILTRE
             val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
             
             for (appInfo in packages) {
@@ -389,12 +423,9 @@ class LauncherActivity : AppCompatActivity() {
                     if (name.isNotEmpty() && !name.startsWith(".")) {
                         apps.add(AppInfo(name, appInfo.packageName, appInfo.loadIcon(pm)))
                     }
-                } catch (e: Exception) {
-                    // Ignore les applications qu'on ne peut pas charger
-                }
+                } catch (e: Exception) {}
             }
             
-            // Tri par ordre alphabétique
             val sorted = apps.sortedBy { it.name.lowercase() }
             
             withContext(Dispatchers.Main) {
