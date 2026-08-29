@@ -211,6 +211,12 @@ class LauncherActivity : AppCompatActivity() {
         }
 
         drawerLayout.setOnTouchListener { _, event ->
+            val drawerLocation = IntArray(2)
+            drawerLayout.getLocationOnScreen(drawerLocation)
+            val drawerTop = drawerLocation[1]
+            val drawerHeight = drawerLayout.height
+            val drawerHalfWay = drawerTop + (drawerHeight / 2f)  // MOITIÉ HAUTE
+            
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     startY = event.rawY
@@ -219,7 +225,9 @@ class LauncherActivity : AppCompatActivity() {
                 MotionEvent.ACTION_MOVE -> {
                     if (isDrawerOpen) {
                         val deltaY = event.rawY - startY
-                        if (deltaY > 0) {
+                        val touchY = event.rawY
+                        // Seulement si le toucher est DANS LA MOITIÉ HAUTE du tiroir
+                        if (deltaY > 0 && touchY < drawerHalfWay) {
                             drawerOffset = deltaY
                             drawerLayout.translationY = deltaY
                         }
