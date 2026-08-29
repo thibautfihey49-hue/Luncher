@@ -3,7 +3,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/root_layout"
-    android:background="#000000">
+    android:background="#00000000">
 
     <!-- ===== ÉCRAN D'ACCUEIL ===== -->
     <LinearLayout
@@ -56,7 +56,7 @@
             <View
                 android:layout_width="40dp"
                 android:layout_height="4dp"
-                android:background="#80FFFFFF"
+                android:background="#00000000"
                 android:layout_marginBottom="8dp"/>
 
             <TextView
@@ -74,7 +74,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="#F0000000"
+        android:background="#00000000"
         android:elevation="24dp"
         android:translationY="1000dp"
         android:visibility="gone">
@@ -87,7 +87,7 @@
             android:hint="🔍 Rechercher une application..."
             android:textColor="#FFFFFF"
             android:textColorHint="#80FFFFFF"
-            android:background="#20FFFFFF"
+            android:background="#00000000"
             android:paddingHorizontal="16dp"
             android:layout_margin="12dp"
             android:inputType="textFilter"/>

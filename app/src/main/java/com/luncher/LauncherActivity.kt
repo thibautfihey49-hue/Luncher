@@ -33,7 +33,6 @@ import androidx.core.content.edit
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.luncher.data.AppInfo
-import com.luncher.data.NotificationListener
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -51,7 +50,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var dragHandle: View
     private lateinit var drawerLayout: LinearLayout
     private lateinit var searchInput: EditText
-    private lateinit var searchBarContainer: View
+    private lateinit var searchBarContainer: LinearLayout
     private lateinit var appsRecycler: RecyclerView
     private lateinit var rootLayout: View
     private lateinit var timeContainer: LinearLayout
@@ -163,6 +162,7 @@ class LauncherActivity : AppCompatActivity() {
                     timeStartY = event.rawY
                     timeViewStartX = view.x
                     timeViewStartY = view.y
+                    true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     val deltaX = abs(event.rawX - timeStartX)
@@ -177,6 +177,7 @@ class LauncherActivity : AppCompatActivity() {
                             view.y = timeViewStartY + (event.rawY - timeStartY)
                         }
                     }
+                    true
                 }
                 MotionEvent.ACTION_UP -> {
                     val pressDuration = System.currentTimeMillis() - pressStartTime
@@ -193,27 +194,31 @@ class LauncherActivity : AppCompatActivity() {
                         }
                     }
                     isDraggingTime = false
+                    true
                 }
+                else -> true
             }
-            true
         }
     }
-                else -> true
 
     private fun setupDrawerGestures() {
         dragHandle.setOnTouchListener { _, event ->
             when (event.action) {
-                MotionEvent.ACTION_DOWN -> startY = event.rawY
+                MotionEvent.ACTION_DOWN -> {
+                    startY = event.rawY
+                    true
+                }
                 MotionEvent.ACTION_UP -> {
                     if (startY - event.rawY > touchThreshold) {
                         openDrawer()
                     }
+                    true
                 }
+                else -> true
             }
-            true
         }
 
-        // 👇 FERMETURE DEPUIS LA BARRE DE RECHERCHE
+        // Fermeture depuis la barre de recherche
         searchBarContainer.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
@@ -240,16 +245,17 @@ class LauncherActivity : AppCompatActivity() {
                     drawerOffset = 0f
                     true
                 }
-            }
                 else -> true
+            }
         }
-        
-        // 👇 FERMETURE DEPUIS LE RESTE DU TIROIR
+
+        // Fermeture depuis le reste du tiroir
         drawerLayout.setOnTouchListener { _, event ->
             when (event.action) {
                 MotionEvent.ACTION_DOWN -> {
                     startY = event.rawY
                     drawerOffset = 0f
+                    true
                 }
                 MotionEvent.ACTION_MOVE -> {
                     if (isDrawerOpen) {
@@ -259,6 +265,7 @@ class LauncherActivity : AppCompatActivity() {
                             drawerLayout.translationY = deltaY
                         }
                     }
+                    true
                 }
                 MotionEvent.ACTION_UP -> {
                     if (drawerOffset > touchThreshold) {
@@ -267,12 +274,12 @@ class LauncherActivity : AppCompatActivity() {
                         resetDrawerPosition()
                     }
                     drawerOffset = 0f
+                    true
                 }
+                else -> true
             }
-            true
         }
     }
-                else -> true
 
     private fun openDrawer() {
         isDrawerOpen = true
