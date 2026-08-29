@@ -17,17 +17,21 @@ import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.view.ContextThemeWrapper
 import androidx.core.app.NotificationCompat
 import com.luncher.R
 import android.app.Service
 import android.os.IBinder
-import com.google.android.material.button.MaterialButton
+import android.graphics.Color
+import android.view.ViewGroup
+import android.widget.Button
 
 class FloatingNotificationService : Service() {
 
     private var windowManager: WindowManager? = null
     private var floatingView: View? = null
     private var container: LinearLayout? = null
+    private var themedContext: Context? = null
 
     companion object {
         private const val CHANNEL_ID = "luncher_aggressive"
@@ -44,6 +48,7 @@ class FloatingNotificationService : Service() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        themedContext = ContextThemeWrapper(this, R.style.Theme_Luncher)
         createChannel()
         startForeground(NOTIF_ID, buildForegroundNotif())
         showAggressiveWindow()
@@ -67,8 +72,9 @@ class FloatingNotificationService : Service() {
     private fun showAggressiveWindow() {
         if (floatingView != null) return
         if (windowManager == null) windowManager = getSystemService(Context.WINDOW_SERVICE) as WindowManager
-        val scroll = ScrollView(this).apply { isVerticalScrollBarEnabled = false }
-        val cont = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(8,8,8,8) }
+        val ctx = themedContext ?: this
+        val scroll = ScrollView(ctx).apply { isVerticalScrollBarEnabled = false }
+        val cont = LinearLayout(ctx).apply { orientation = LinearLayout.VERTICAL; setPadding(8,8,8,8) }
         scroll.addView(cont); container = cont
         val params = WindowManager.LayoutParams(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.WRAP_CONTENT, if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED, PixelFormat.TRANSLUCENT).apply { gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL; y = 80 }
         floatingView = scroll
@@ -83,7 +89,8 @@ class FloatingNotificationService : Service() {
         cont.removeAllViews()
         if (NotificationRepository.notifs.isEmpty()) { view.visibility = View.GONE; return }
         view.visibility = View.VISIBLE
-        val inflater = LayoutInflater.from(this)
+        val ctx = themedContext ?: this
+        val inflater = LayoutInflater.from(ctx)
         for (notif in NotificationRepository.notifs.toList()) {
             val card = inflater.inflate(R.layout.item_notification_float, cont, false)
             val iconView = card.findViewById<android.widget.ImageView>(R.id.notifIcon)
@@ -98,29 +105,73 @@ class FloatingNotificationService : Service() {
             titleView.text = if (notif.title.isBlank()) notif.appName else notif.title
             contentView.text = notif.content
             actionsContainer.removeAllViews()
-            val closeBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply { text = "FERMER"; setTextColor(0xFFFF8888.toInt()) }
-            closeBtn.setOnClickListener { NotificationRepository.notifs.remove(notif); try { NotificationListener.getInstance()?.cancelNotification(notif.sbnKey) } catch (_: Exception) {}; refreshAggressive() }
-            actionsContainer.addView(closeBtn)
-            notif.notification.actions?.forEach { action ->
-                val actionTitle = action.title.toString()
-                val btn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply {
-                    text = actionTitle.uppercase()
-                    setTextColor(when { actionTitle.contains("pondre", true) -> 0xFFFFEB3B.toInt(); actionTitle.contains("chiv", true) -> 0xFFAAFFFFFF.toInt(); else -> 0xFF2196F3.toInt() })
-                }
-                btn.setOnClickListener {
-                    try { if (action.remoteInputs != null && action.remoteInputs.isNotEmpty()) { val launch = packageManager.getLaunchIntentForPackage(notif.packageName); launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); if (launch != null) startActivity(launch) else action.actionIntent.send() } else { action.actionIntent.send() } } catch (e: Exception) { try { notif.notification.contentIntent?.send() } catch (_: Exception) {} }
-                    if (!actionTitle.contains("pondre", true)) { NotificationRepository.notifs.remove(notif); refreshAggressive() }
+
+            fun addBtn(label: String, color: Int, onClick: () -> Unit) {
+                val btn = TextView(ctx).apply {
+                    text = label
+                    setTextColor(color)
+                    textSize = 13f
+                    setPadding(24,16,24,16)
+                    isClickable = true
+                    isFocusable = true
+                    setOnClickListener { onClick() }
                 }
                 actionsContainer.addView(btn)
             }
-            if (notif.notification.actions.isNullOrEmpty()) {
-                val openBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply { text = "OUVRIR"; setTextColor(0xFF2196F3.toInt()) }
-                openBtn.setOnClickListener { try { val launch = packageManager.getLaunchIntentForPackage(notif.packageName); launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); if (launch != null) startActivity(launch) else notif.notification.contentIntent?.send() } catch (_: Exception) {}; NotificationRepository.notifs.remove(notif); refreshAggressive() }
-                actionsContainer.addView(openBtn)
-                val replyBtn = MaterialButton(this, null, com.google.android.material.R.attr.borderlessButtonStyle).apply { text = "REPONDRE"; setTextColor(0xFFFFEB3B.toInt()) }
-                replyBtn.setOnClickListener { try { val launch = packageManager.getLaunchIntentForPackage(notif.packageName); launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); if (launch != null) startActivity(launch) else notif.notification.contentIntent?.send() } catch (_: Exception) {}; NotificationRepository.notifs.remove(notif); refreshAggressive() }
-                actionsContainer.addView(replyBtn)
+
+            addBtn("FERMER", Color.parseColor("#FF8888")) {
+                NotificationRepository.notifs.remove(notif)
+                try { NotificationListener.getInstance()?.cancelNotification(notif.sbnKey) } catch (_: Exception) {}
+                refreshAggressive()
             }
+
+            notif.notification.actions?.forEach { action ->
+                val actionTitle = action.title.toString()
+                val col = when {
+                    actionTitle.contains("pondre", true) -> Color.parseColor("#FFEB3B")
+                    actionTitle.contains("chiv", true) -> Color.parseColor("#FFAAAAAA")
+                    else -> Color.parseColor("#FF2196F3")
+                }
+                addBtn(actionTitle.uppercase(), col) {
+                    try {
+                        if (action.remoteInputs != null && action.remoteInputs.isNotEmpty()) {
+                            val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
+                            launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            if (launch != null) startActivity(launch) else action.actionIntent.send()
+                        } else {
+                            action.actionIntent.send()
+                        }
+                    } catch (e: Exception) {
+                        try { notif.notification.contentIntent?.send() } catch (_: Exception) {}
+                    }
+                    if (!actionTitle.contains("pondre", true)) {
+                        NotificationRepository.notifs.remove(notif)
+                        refreshAggressive()
+                    }
+                }
+            }
+
+            if (notif.notification.actions.isNullOrEmpty()) {
+                addBtn("OUVRIR", Color.parseColor("#FF2196F3")) {
+                    try {
+                        val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
+                        launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        if (launch != null) startActivity(launch) else notif.notification.contentIntent?.send()
+                    } catch (_: Exception) {}
+                    NotificationRepository.notifs.remove(notif)
+                    refreshAggressive()
+                }
+                addBtn("REPONDRE", Color.parseColor("#FFEB3B")) {
+                    try {
+                        val launch = packageManager.getLaunchIntentForPackage(notif.packageName)
+                        launch?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        if (launch != null) startActivity(launch) else notif.notification.contentIntent?.send()
+                    } catch (_: Exception) {}
+                    NotificationRepository.notifs.remove(notif)
+                    refreshAggressive()
+                }
+            }
+
             cont.addView(card)
         }
     }
