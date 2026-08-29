@@ -28,17 +28,11 @@ class NotificationListener : NotificationListenerService() {
         fun getInstance(): NotificationListener? = _instance
     }
 
+    // TES 3 APPS EXACTES DES SCREENS
     private val allowedPkgs = setOf(
-        "com.google.android.gm",
-        "com.microsoft.office.outlook",
-        "com.yahoo.mobile.client.android.mail",
-        "com.google.android.apps.messaging",
-        "com.android.mms",
-        "com.samsung.android.messaging",
         "com.whatsapp",
-        "com.whatsapp.w4b",
-        "com.facebook.orca",
-        "org.telegram.messenger"
+        "com.google.android.apps.messaging",
+        "com.google.android.gm"
     )
 
     override fun onCreate() {
@@ -55,6 +49,8 @@ class NotificationListener : NotificationListenerService() {
         if (sbn == null) return
         if (sbn.isOngoing) return
         if (sbn.packageName == packageName) return
+        // SEULEMENT tes 3 apps
+        if (sbn.packageName !in allowedPkgs) return
 
         val extras = sbn.notification.extras
         val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: ""
@@ -63,7 +59,6 @@ class NotificationListener : NotificationListenerService() {
             ?: extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString() ?: ""
 
         if (title.isBlank() && text.isBlank()) return
-        if (text.length < 2) return
 
         val appName = try {
             packageManager.getApplicationLabel(packageManager.getApplicationInfo(sbn.packageName, 0)).toString()
