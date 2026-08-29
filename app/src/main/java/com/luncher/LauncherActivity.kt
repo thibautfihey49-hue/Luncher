@@ -198,6 +198,7 @@ class LauncherActivity : AppCompatActivity() {
             true
         }
     }
+                else -> true
 
     private fun setupDrawerGestures() {
         dragHandle.setOnTouchListener { _, event ->
@@ -240,6 +241,7 @@ class LauncherActivity : AppCompatActivity() {
                     true
                 }
             }
+                else -> true
         }
         
         // 👇 FERMETURE DEPUIS LE RESTE DU TIROIR
@@ -270,6 +272,7 @@ class LauncherActivity : AppCompatActivity() {
             true
         }
     }
+                else -> true
 
     private fun openDrawer() {
         isDrawerOpen = true
