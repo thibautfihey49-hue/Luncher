@@ -11,13 +11,14 @@ import com.luncher.data.AppInfo
 class AppAdapter(
     private val onAppClick: (AppInfo) -> Unit
 ) : RecyclerView.Adapter<AppAdapter.AppViewHolder>() {
-    
-    private var allApps = listOf<AppInfo>()
-    private var filtered = listOf<AppInfo>()
+
+    private var fullList = listOf<AppInfo>()
+    private var filteredList = listOf<AppInfo>()
 
     inner class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.app_icon)
         val name: TextView = view.findViewById(R.id.app_name)
+        val root: View = view.findViewById(R.id.app_item_root)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): AppViewHolder {
@@ -26,23 +27,28 @@ class AppAdapter(
     }
 
     override fun onBindViewHolder(holder: AppViewHolder, position: Int) {
-        val app = filtered[position]
-        holder.icon.setImageDrawable(app.icon)
+        val app = filteredList[position]
         holder.name.text = app.name
-        holder.itemView.setOnClickListener { onAppClick(app) }
+        holder.icon.setImageDrawable(app.icon)
+        holder.root.setOnClickListener { onAppClick(app) }
     }
 
-    override fun getItemCount(): Int = filtered.size
+    override fun getItemCount(): Int = filteredList.size
 
     fun setList(list: List<AppInfo>) {
-        allApps = list
-        filtered = list
+        fullList = list
+        filteredList = list
         notifyDataSetChanged()
     }
 
     fun filter(query: String) {
-        filtered = if (query.isEmpty()) allApps else allApps.filter { 
-            it.name.contains(query, ignoreCase = true) 
+        filteredList = if (query.isEmpty()) {
+            fullList
+        } else {
+            fullList.filter { 
+                it.name.contains(query, ignoreCase = true) ||
+                it.packageName.contains(query, ignoreCase = true)
+            }
         }
         notifyDataSetChanged()
     }

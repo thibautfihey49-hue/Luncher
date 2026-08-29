@@ -1,84 +1,103 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root_layout"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@android:color/transparent"
     android:orientation="vertical"
-    android:id="@+id/root_layout">
+    android:background="#00000000">
 
+    <!-- Zone supérieure : Heure et Date -->
     <LinearLayout
-        android:id="@+id/time_container"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:orientation="vertical"
-        android:layout_marginTop="80dp">
-
-        <TextView
-            android:id="@+id/heure_texte"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="00:00"
-            android:textSize="80sp"
-            android:textStyle="bold"
-            android:textColor="#FFFFFFFF"/>
-
-        <TextView
-            android:id="@+id/date_texte"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Lundi 1 Janvier"
-            android:textSize="20sp"
-            android:textColor="#FFFFFFFF"
-            android:layout_marginTop="8dp"/>
-    </LinearLayout>
-
-    <View
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1"/>
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
 
+        <LinearLayout
+            android:id="@+id/time_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="20dp">
+
+            <TextView
+                android:id="@+id/heure_texte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textSize="72sp"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:fontFamily="sans-serif-light"/>
+
+            <TextView
+                android:id="@+id/date_texte"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lundi 1 Janvier"
+                android:textSize="18sp"
+                android:textColor="#F0FFFFFF"
+                android:layout_marginTop="4dp"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/status_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Chargement..."
+            android:textSize="12sp"
+            android:textColor="#80FFFFFF"
+            android:layout_marginTop="10dp"
+            android:visibility="visible"/>
+    </LinearLayout>
+
+    <!-- Bouton pour ouvrir/fermer le tiroir -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
-        android:paddingVertical="12dp"
-        android:background="#80FFFFFF">
+        android:paddingVertical="10dp">
 
         <ImageView
             android:id="@+id/toggle_btn"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:src="@drawable/ic_expand"
-            android:clickable="true"
-            android:focusable="true"
-            android:background="?attr/selectableItemBackgroundBorderless"/>
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:src="@drawable/ic_drawer_handle"
+            android:background="#20FFFFFF"
+            android:padding="12dp"
+            android:layout_gravity="center"/>
     </LinearLayout>
 
+    <!-- Tiroir d'applications -->
     <LinearLayout
         android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="2"
-        android:background="#CCFFFFFF"
+        android:layout_weight="1.2"
         android:orientation="vertical"
-        android:visibility="gone">
+        android:background="#E6000000"
+        android:elevation="24dp">
 
         <EditText
             android:id="@+id/search_input"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="48dp"
             android:hint="🔍 Rechercher une application..."
-            android:layout_margin="16dp"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#80FFFFFF"
+            android:background="#1FFFFFFF"
+            android:layout_margin="12dp"
             android:paddingHorizontal="16dp"
-            android:background="#F0F0F0"
-            android:inputType="textPersonName"/>
+            android:inputType="textCapWords|textNoSuggestions"/>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/apps_recycler"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingHorizontal="8dp"/>
+            android:clipToPadding="false"
+            android:paddingVertical="8dp"/>
     </LinearLayout>
 
 </LinearLayout>

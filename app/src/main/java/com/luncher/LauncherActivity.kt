@@ -9,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.BitmapDrawable
+import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -50,6 +51,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var appsRecycler: RecyclerView
     private lateinit var rootLayout: LinearLayout
     private lateinit var timeContainer: LinearLayout
+    private lateinit var statusText: TextView
     
     private lateinit var adapter: AppAdapter
     private lateinit var prefs: SharedPreferences
@@ -112,6 +114,7 @@ class LauncherActivity : AppCompatActivity() {
         appsRecycler = findViewById(R.id.apps_recycler)
         rootLayout = findViewById(R.id.root_layout)
         timeContainer = findViewById(R.id.time_container)
+        statusText = findViewById(R.id.status_text)
 
         prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE)
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -195,7 +198,6 @@ class LauncherActivity : AppCompatActivity() {
         notificationAdapter?.notifyDataSetChanged()
     }
 
-    // ✅ CRÉE LA FENÊTRE DES NOTIFICATIONS PAR-DESSUS TOUTES LES APPS
     private fun ensureNotificationContainer() {
         if (notificationsContainer == null && Settings.canDrawOverlays(this)) {
             val inflater = getSystemService(LAYOUT_INFLATER_SERVICE) as LayoutInflater
@@ -208,7 +210,6 @@ class LauncherActivity : AppCompatActivity() {
             recyclerView.adapter = notificationAdapter
             recyclerView.layoutManager = LinearLayoutManager(this)
 
-            // ✅ TYPE_APPLICATION_OVERLAY = S'AFFICHE PAR-DESSUS TOUT !
             val layoutParams = WindowManager.LayoutParams(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
@@ -231,26 +232,6 @@ class LauncherActivity : AppCompatActivity() {
             } catch (e: Exception) {
                 e.printStackTrace()
             }
-        } else if (notificationsContainer != null && Settings.canDrawOverlays(this)) {
-            try {
-                windowManager.updateViewLayout(notificationsContainer, WindowManager.LayoutParams(
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
-                    } else {
-                        @Suppress("DEPRECATION")
-                        WindowManager.LayoutParams.TYPE_PHONE
-                    },
-                    WindowManager.LayoutParams.MATCH_PARENT,
-                    WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or 
-                    WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
-                    PixelFormat.TRANSLUCENT
-                ).apply {
-                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
-                    width = (resources.displayMetrics.widthPixels * 0.96).toInt()
-                    y = (20 * resources.displayMetrics.density).toInt()
-                })
-            } catch (e: Exception) {}
         }
     }
 
@@ -381,7 +362,16 @@ class LauncherActivity : AppCompatActivity() {
 
     private fun setupRecycler() {
         adapter = AppAdapter { app ->
-            packageManager.getLaunchIntentForPackage(app.packageName)?.let { startActivity(it) }
+            try {
+                val launchIntent = packageManager.getLaunchIntentForPackage(app.packageName)
+                if (launchIntent != null) {
+                    startActivity(launchIntent)
+                } else {
+                    Toast.makeText(this, "Impossible d'ouvrir ${app.name}", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this, "Erreur : ${e.message}", Toast.LENGTH_SHORT).show()
+            }
         }
         appsRecycler.adapter = adapter
         appsRecycler.layoutManager = LinearLayoutManager(this)
@@ -409,28 +399,66 @@ class LauncherActivity : AppCompatActivity() {
         }
     }
 
-    // ✅ TOUTES LES APPLICATIONS — SANS FILTRE
+    // ✅ MÉTHODE CORRIGÉE : Récupère TOUTES les apps, surtout celles installées par l'utilisateur
     private fun loadAllApps() {
+        statusText.text = "🔄 Chargement des applications..."
+        
         CoroutineScope(Dispatchers.IO).launch {
             val pm = packageManager
             val apps = mutableListOf<AppInfo>()
             
-            val packages = pm.getInstalledApplications(PackageManager.GET_META_DATA)
+            // ✅ MÉTHODE 1 : Récupère TOUTES les applications avec un launcher (icône visible)
+            val launchIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            val resolveInfos = pm.queryIntentActivities(launchIntent, PackageManager.MATCH_ALL)
             
-            for (appInfo in packages) {
+            for (ri in resolveInfos) {
                 try {
+                    val packageName = ri.activityInfo.packageName
+                    // Ignore notre propre application
+                    if (packageName == this@LauncherActivity.packageName) continue
+                    
+                    val appInfo = pm.getApplicationInfo(packageName, 0)
                     val name = appInfo.loadLabel(pm).toString()
+                    val icon: Drawable = appInfo.loadIcon(pm)
+                    
                     if (name.isNotEmpty() && !name.startsWith(".")) {
-                        apps.add(AppInfo(name, appInfo.packageName, appInfo.loadIcon(pm)))
+                        apps.add(AppInfo(name, packageName, icon))
                     }
-                } catch (e: Exception) {}
+                } catch (e: Exception) {
+                    // Ignorer
+                }
             }
             
-            val sorted = apps.sortedBy { it.name.lowercase() }
+            // ✅ TRI : D'abord les apps installées par l'utilisateur, puis système
+            val userApps = mutableListOf<AppInfo>()
+            val systemApps = mutableListOf<AppInfo>()
+            
+            for (app in apps) {
+                try {
+                    val appInfo = pm.getApplicationInfo(app.packageName, 0)
+                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    val isUpdatedSystemApp = (appInfo.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) != 0
+                    
+                    if (!isSystemApp || isUpdatedSystemApp) {
+                        userApps.add(app)  // ✅ Apps utilisateur + apps système mises à jour
+                    } else {
+                        systemApps.add(app)  // Apps système pures
+                    }
+                } catch (e: Exception) {
+                    userApps.add(app)
+                }
+            }
+            
+            // Tri alphabétique dans chaque groupe
+            val sortedUser = userApps.sortedBy { it.name.lowercase() }
+            val sortedSystem = systemApps.sortedBy { it.name.lowercase() }
+            val finalList = sortedUser + sortedSystem
             
             withContext(Dispatchers.Main) {
-                allApps = sorted
-                adapter.setList(sorted)
+                allApps = finalList
+                adapter.setList(finalList)
+                statusText.text = "✅ ${finalList.size} applications chargées (${userApps.size} utilisateur)"
+                handler.postDelayed({ statusText.visibility = View.GONE }, 3000)
             }
         }
     }
