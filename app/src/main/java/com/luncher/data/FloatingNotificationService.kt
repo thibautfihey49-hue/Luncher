@@ -25,26 +25,21 @@ class FloatingNotificationService : Service() {
     private fun showWindow(){ if(root!=null) try{wm?.removeView(root)}catch(_:Exception){}; val scroll=ScrollView(this); val cont=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL; setPadding(12,12,12,12)}; scroll.addView(cont); container=cont; val p=WindowManager.LayoutParams(-1,-2,if(Build.VERSION.SDK_INT>=26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT).apply{gravity=Gravity.TOP; y=100; softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE}; params=p; root=scroll; try{wm?.addView(root,p)}catch(_:Exception){} }
     private fun enableKb(e: EditText){ try{ params!!.flags=params!!.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv(); wm?.updateViewLayout(root,params); e.requestFocus(); (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(e,0)}catch(_:Exception){} }
     private fun disableKb(){ try{ params!!.flags=params!!.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE; wm?.updateViewLayout(root,params); (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(root?.windowToken,0)}catch(_:Exception){} }
-
     fun refreshAggressive(){
         val cont=container?:return; if(wm==null||root==null){ showWindow(); return }; cont.removeAllViews(); if(NotificationRepository.notifs.isEmpty()){ root?.visibility=View.GONE; disableKb(); return }; root?.visibility=View.VISIBLE; val inf=LayoutInflater.from(this)
         for(notif in NotificationRepository.notifs.toList()){
-            if(notif.packageName=="android") continue
             val card=inf.inflate(R.layout.item_notification_float,cont,false)
             card.findViewById<TextView>(R.id.notifAppName).text="${notif.appName} - ${notif.title}"
             card.findViewById<TextView>(R.id.notifContent).text=notif.content
             val actionsBox=card.findViewById<LinearLayout>(R.id.notifActions); actionsBox.removeAllViews()
-
             val replyAction = notif.notification.actions?.firstOrNull{ it.remoteInputs!=null && it.remoteInputs.isNotEmpty() }
-
             if(replyAction!=null){
-                val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,16,0,0)}
-                val ed=EditText(this).apply{hint="Répondre..."; setTextColor(Color.BLACK); setBackgroundColor(Color.WHITE); setPadding(24,24,24,24); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(0,0,8,0)}}
+                val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL}
+                val ed=EditText(this).apply{hint="Répondre à ${notif.appName}..."; setTextColor(Color.BLACK); setBackgroundColor(Color.WHITE); setPadding(24,24,24,24); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(0,0,8,0)}}
                 val send=TextView(this).apply{text="ENVOYER"; setTextColor(Color.WHITE); setBackgroundColor(Color.BLACK); setPadding(28,28,28,28); gravity=Gravity.CENTER}
-                row.addView(ed); row.addView(send)
-                actionsBox.addView(row)
-                ed.setOnFocusChangeListener{ _, h-> if(h) enableKb(ed) }
+                row.addView(ed); row.addView(send); actionsBox.addView(row)
                 ed.setOnClickListener{ enableKb(ed) }
+                ed.setOnFocusChangeListener{ _,h-> if(h) enableKb(ed) }
                 send.setOnClickListener{
                     val txt=ed.text.toString().trim(); if(txt.isEmpty()) return@setOnClickListener
                     try{
@@ -59,18 +54,13 @@ class FloatingNotificationService : Service() {
                             NotificationRepository.notifs.remove(notif)
                             try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}
                             refreshAggressive()
-                        }, 800)
-                    }catch(e:Exception){ Toast.makeText(this,"Erreur: ${e.message}",1).show() }
+                        }, 1000)
+                    }catch(e:Exception){ Toast.makeText(this,"Erreur ${e.message}",1).show() }
                 }
-            } else {
-                // PAS DE REPLY POSSIBLE - on explique
-                val info=TextView(this).apply{text="Réponse directe impossible pour cette notif (Gmail déjà ouvert). Ferme Gmail et attends une nouvelle notif."; setTextColor(Color.parseColor("#FFAA0000")); textSize=12f; setPadding(0,12,0,0)}
-                actionsBox.addView(info)
             }
-
-            fun addBtn(t:String,c:Int,cl:()->Unit){ val b=TextView(this).apply{text=t; setTextColor(c); setPadding(24,20,24,20); setBackgroundColor(Color.parseColor("#FFEEEEEE")); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,8,0,0)}; setOnClickListener{cl()}}; actionsBox.addView(b) }
-            addBtn("FERMER", Color.RED){ NotificationRepository.notifs.remove(notif); try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}; refreshAggressive() }
-            addBtn("OUVRIR", Color.BLACK){ try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i)}catch(_:Exception){} }
+            fun btn(t:String,c:Int,cl:()->Unit){ val v=TextView(this).apply{text=t; setTextColor(c); setPadding(24,20,24,20); setBackgroundColor(Color.parseColor("#FFEEEEEE")); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,8,0,0)}; setOnClickListener{cl()}}; actionsBox.addView(v) }
+            btn("FERMER", Color.RED){ NotificationRepository.notifs.remove(notif); try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}; refreshAggressive() }
+            btn("OUVRIR", Color.BLACK){ try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i)}catch(_:Exception){} }
             cont.addView(card)
         }
     }
