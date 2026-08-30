@@ -1,0 +1,4 @@
+:root{--bg:#0A0E14;--glass:rgba(255,255,255,0.06);--border:rgba(255,255,255,0.18);--blur:20px;--radius:20px}
+body{background:radial-gradient(ellipse at top,#1a2332 0%,#0A0E14 70%)}
+.nexus-card{background:var(--glass);backdrop-filter:blur(var(--blur));border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,0.4);transform-style:preserve-3d;transition:0.3s}
+.nexus-card:hover{transform:translateY(-4px) rotateX(5deg) translateZ(16px)}
