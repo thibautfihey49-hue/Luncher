@@ -1,0 +1,8 @@
+[
+  {"id":"nexus_parallax","name":"NEXUS Parallax 3D Sobre","bg":"#0A0E14","glass":"#1AFFFFFF","text":"#FFFFFF","desc":"Dark sobre elegant sans rainbow - verre 3D","dark":true},
+  {"id":"glass_blue","name":"Modern Glass 3D Bleu","bg":"#FFFFFF","glass":"#E3F2FD","text":"#1E293B","desc":"Ton thème actuel blanc/bleu","dark":false},
+  {"id":"frost_white","name":"Frost White Minimal","bg":"#F8FAFC","glass":"#FFFFFF","text":"#0F172A","desc":"Minimal blanc pur","dark":false},
+  {"id":"midnight","name":"Midnight Black Pro","bg":"#000000","glass":"#111827","text":"#F9FAFB","desc":"Noir total pro","dark":true},
+  {"id":"cyberpunk","name":"Cyberpunk Neon","bg":"#0A0A1A","glass":"#FF00FF33","text":"#00FFFF","desc":"Neon rose/cyan","dark":true},
+  {"id":"solar_orange","name":"Solar Orange","bg":"#1A0F00","glass":"#FF6B0033","text":"#FFB347","desc":"Orange chaud","dark":true}
+]
