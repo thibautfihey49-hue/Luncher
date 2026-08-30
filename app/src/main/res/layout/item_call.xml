@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_margin="6dp" app:cardCornerRadius="20dp" app:cardElevation="0dp" app:cardBackgroundColor="#FFFFFF" app:strokeColor="#F0F0F0" app:strokeWidth="1dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="16dp" android:gravity="center_vertical">
+        <TextView android:id="@+id/avatar" android:layout_width="48dp" android:layout_height="48dp" android:text="👤" android:textSize="22sp" android:gravity="center" android:background="#F1F3F4"/>
+        <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginStart="12dp">
+            <TextView android:id="@+id/t1" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="15sp" android:textColor="#202124" android:fontFamily="sans-serif-medium"/>
+            <TextView android:id="@+id/t2" android:layout_width="match_parent" android:layout_height="wrap_content" android:textSize="12sp" android:textColor="#5F6368" android:layout_marginTop="2dp"/>
+        </LinearLayout>
+        <TextView android:id="@+id/btnCall" android:layout_width="40dp" android:layout_height="40dp" android:text="📞" android:gravity="center" android:background="#000" android:textColor="#FFF"/>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

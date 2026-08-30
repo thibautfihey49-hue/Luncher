@@ -29,17 +29,12 @@ class PhoneAppActivity : AppCompatActivity() {
         }
         findViewById<TextView>(R.id.btnCall).setOnClickListener { makeCall(input.text.toString()) }
         val grid = findViewById<android.widget.GridLayout>(R.id.dialGrid)
-        for(i in 0 until grid.childCount){
-            val tv = grid.getChildAt(i) as TextView
-            tv.setOnClickListener { input.append(tv.text) }
-        }
+        for(i in 0 until grid.childCount){ val tv = grid.getChildAt(i) as TextView; tv.setOnClickListener{ input.append(tv.text) } }
         checkPerms()
     }
     private fun checkPerms(){
         val perms = arrayOf(Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_CONTACTS, Manifest.permission.CALL_PHONE)
-        if(perms.any{ ActivityCompat.checkSelfPermission(this,it)!=PackageManager.PERMISSION_GRANTED }){
-            ActivityCompat.requestPermissions(this, perms, 100)
-        } else loadLogs()
+        if(perms.any{ ActivityCompat.checkSelfPermission(this,it)!=PackageManager.PERMISSION_GRANTED }) ActivityCompat.requestPermissions(this, perms, 100) else loadLogs()
     }
     override fun onRequestPermissionsResult(c:Int, p:Array<out String>, r:IntArray){ super.onRequestPermissionsResult(c,p,r); loadLogs() }
     private fun loadLogs(){
@@ -47,7 +42,7 @@ class PhoneAppActivity : AppCompatActivity() {
         try{
             val cur: Cursor? = contentResolver.query(CallLog.Calls.CONTENT_URI, null, null, null, CallLog.Calls.DATE+" DESC")
             cur?.use{
-                while(it.moveToNext() && list.size<100){
+                while(it.moveToNext() && list.size<200){
                     val num = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.NUMBER))
                     val name = it.getString(it.getColumnIndexOrThrow(CallLog.Calls.CACHED_NAME))?: num
                     val date = it.getLong(it.getColumnIndexOrThrow(CallLog.Calls.DATE))
@@ -60,31 +55,24 @@ class PhoneAppActivity : AppCompatActivity() {
         recycler.adapter = CallAdapter(list)
     }
     private fun makeCall(num:String){
-        if(num.isBlank()){ Toast.makeText(this,"Numéro vide",0).show(); return }
-        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)!=PackageManager.PERMISSION_GRANTED){
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CALL_PHONE), 101); return
-        }
+        if(num.isBlank()) return
+        if(ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)!=PackageManager.PERMISSION_GRANTED){ ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CALL_PHONE), 101); return }
         try{ startActivity(Intent(Intent.ACTION_CALL, Uri.parse("tel:$num"))) }catch(e:Exception){ Toast.makeText(this,"Appel impossible",0).show() }
     }
     data class CallItem(val name:String, val number:String, val date:Long, val type:Int, val dur:Long)
     inner class CallAdapter(val items:List<CallItem>): RecyclerView.Adapter<CallAdapter.H>(){
         inner class H(v:android.view.View): RecyclerView.ViewHolder(v){
-            val t1: TextView = v.findViewById(R.id.t1)
-            val t2: TextView = v.findViewById(R.id.t2)
+            val t1: TextView = v.findViewById(R.id.t1); val t2: TextView = v.findViewById(R.id.t2); val btn: TextView = v.findViewById(R.id.btnCall)
         }
-        override fun onCreateViewHolder(p:android.view.ViewGroup, t:Int): H {
-            val ll = android.widget.LinearLayout(this@PhoneAppActivity).apply{ orientation=android.widget.LinearLayout.VERTICAL; setPadding(24,20,24,20) }
-            val a = TextView(this@PhoneAppActivity).apply{ id=R.id.t1; textSize=15f; setTextColor(android.graphics.Color.BLACK) }
-            val b = TextView(this@PhoneAppActivity).apply{ id=R.id.t2; textSize=12f; setTextColor(android.graphics.Color.GRAY) }
-            ll.addView(a); ll.addView(b); return H(ll)
-        }
+        override fun onCreateViewHolder(p:android.view.ViewGroup, t:Int): H { return H(layoutInflater.inflate(R.layout.item_call, p, false)) }
         override fun getItemCount()=items.size
         override fun onBindViewHolder(h:H, pos:Int){
             val c = items[pos]
-            val typeStr = when(c.type){ CallLog.Calls.INCOMING_TYPE->"Entrant"; CallLog.Calls.OUTGOING_TYPE->"Sortant"; CallLog.Calls.MISSED_TYPE->"Manqué"; else->"Appel" }
-            h.t1.text = "${c.name} • $typeStr"
-            h.t2.text = "${c.number} • ${c.dur}s • ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(c.date))}"
-            h.itemView.setOnClickListener { makeCall(c.number) }
+            val typeStr = when(c.type){ CallLog.Calls.INCOMING_TYPE->"Entrant • "; CallLog.Calls.OUTGOING_TYPE->"Sortant • "; CallLog.Calls.MISSED_TYPE->"Manqué • "; else->"" }
+            h.t1.text = c.name
+            h.t2.text = typeStr + "${c.number} • ${c.dur}s • ${java.text.DateFormat.getDateTimeInstance().format(java.util.Date(c.date))}"
+            h.btn.setOnClickListener{ makeCall(c.number) }
+            h.itemView.setOnClickListener{ makeCall(c.number) }
         }
     }
 }

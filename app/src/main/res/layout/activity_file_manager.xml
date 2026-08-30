@@ -1,10 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#FFF">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:gravity="center_vertical" android:padding="12dp">
-        <TextView android:id="@+id/back" android:layout_width="40dp" android:layout_height="40dp" android:text="←" android:textSize="22sp" android:gravity="center"/>
-        <TextView android:id="@+id/pathView" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="/sdcard" android:textSize="12sp" android:singleLine="true" android:layout_marginHorizontal="8dp"/>
-        <TextView android:id="@+id/btnPaste" android:layout_width="wrap_content" android:layout_height="36dp" android:text="📋 Coller" android:background="#000" android:textColor="#FFF" android:paddingHorizontal="12dp" android:gravity="center" android:textSize="12sp"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#F8F8F9">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:background="#FFF">
+        <TextView android:id="@+id/back" android:layout_width="40dp" android:layout_height="40dp" android:text="←" android:textSize="22sp" android:gravity="center" android:background="#F1F3F4"/>
+        <TextView android:id="@+id/pathView" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="/storage" android:textSize="13sp" android:fontFamily="sans-serif-medium" android:layout_marginStart="12dp"/>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/btnPaste" android:layout_width="wrap_content" android:layout_height="40dp" app:cardCornerRadius="20dp" app:cardBackgroundColor="#000"><TextView android:layout_width="wrap_content" android:layout_height="match_parent" android:text="📋 Coller" android:textColor="#FFF" android:paddingHorizontal="16dp" android:gravity="center" android:textSize="12sp"/></com.google.android.material.card.MaterialCardView>
     </LinearLayout>
-    <EditText android:id="@+id/searchFile" android:layout_width="match_parent" android:layout_height="48dp" android:layout_margin="12dp" android:background="#F5F5F7" android:hint="Rechercher fichier..." android:paddingHorizontal="16dp"/>
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerFiles" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
+    <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="48dp" android:layout_margin="12dp" app:cardCornerRadius="24dp" app:cardElevation="0dp" app:cardBackgroundColor="#FFFFFF" app:strokeColor="#EAEAEA" app:strokeWidth="1dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:paddingHorizontal="16dp">
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⌕" android:textColor="#9AA0A6"/>
+            <EditText android:id="@+id/searchFile" android:layout_width="0dp" android:layout_weight="1" android:layout_height="match_parent" android:background="@null" android:hint="Rechercher fichier..." android:textSize="14sp" android:layout_marginStart="12dp"/>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerFiles" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="4dp"/>
 </LinearLayout>
