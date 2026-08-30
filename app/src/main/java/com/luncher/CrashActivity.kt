@@ -1,0 +1,1 @@
+package com.luncher; import android.os.Bundle; import android.widget.TextView; import androidx.appcompat.app.AppCompatActivity; class CrashActivity:AppCompatActivity(){override fun onCreate(s:Bundle?){super.onCreate(s); val err=intent.getStringExtra("error")?:"?"; val tv=TextView(this); tv.text="Luncher - erreur evitee:\n\n"+err; tv.setPadding(30,150,30,30); setContentView(tv)}}
