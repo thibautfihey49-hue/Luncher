@@ -6,7 +6,9 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.provider.CallLog
+import android.view.View
 import android.widget.EditText
+import android.widget.GridLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -22,14 +24,17 @@ class PhoneAppActivity : AppCompatActivity() {
         recycler = findViewById(R.id.recycler)
         input = findViewById(R.id.inputNumber)
         recycler.layoutManager = LinearLayoutManager(this)
-        findViewById<TextView>(R.id.back).setOnClickListener { finish() }
-        findViewById<TextView>(R.id.btnDial).setOnClickListener {
-            val pad = findViewById<android.view.View>(R.id.dialPad)
-            pad.visibility = if(pad.visibility==android.view.View.GONE) android.view.View.VISIBLE else android.view.View.GONE
+        findViewById<View>(R.id.back).setOnClickListener { finish() }
+        findViewById<View>(R.id.btnDial).setOnClickListener {
+            val pad = findViewById<View>(R.id.dialPad)
+            pad.visibility = if(pad.visibility==View.GONE) View.VISIBLE else View.GONE
         }
-        findViewById<TextView>(R.id.btnCall).setOnClickListener { makeCall(input.text.toString()) }
-        val grid = findViewById<android.widget.GridLayout>(R.id.dialGrid)
-        for(i in 0 until grid.childCount){ val tv = grid.getChildAt(i) as TextView; tv.setOnClickListener{ input.append(tv.text) } }
+        findViewById<View>(R.id.btnCall).setOnClickListener { makeCall(input.text.toString()) }
+        val grid = findViewById<GridLayout>(R.id.dialGrid)
+        for(i in 0 until grid.childCount){
+            val tv = grid.getChildAt(i) as TextView
+            tv.setOnClickListener { input.append(tv.text) }
+        }
         checkPerms()
     }
     private fun checkPerms(){
@@ -61,9 +66,7 @@ class PhoneAppActivity : AppCompatActivity() {
     }
     data class CallItem(val name:String, val number:String, val date:Long, val type:Int, val dur:Long)
     inner class CallAdapter(val items:List<CallItem>): RecyclerView.Adapter<CallAdapter.H>(){
-        inner class H(v:android.view.View): RecyclerView.ViewHolder(v){
-            val t1: TextView = v.findViewById(R.id.t1); val t2: TextView = v.findViewById(R.id.t2); val btn: TextView = v.findViewById(R.id.btnCall)
-        }
+        inner class H(v:View): RecyclerView.ViewHolder(v){ val t1: TextView = v.findViewById(R.id.t1); val t2: TextView = v.findViewById(R.id.t2); val btn: View = v.findViewById(R.id.btnCall) }
         override fun onCreateViewHolder(p:android.view.ViewGroup, t:Int): H { return H(layoutInflater.inflate(R.layout.item_call, p, false)) }
         override fun getItemCount()=items.size
         override fun onBindViewHolder(h:H, pos:Int){
