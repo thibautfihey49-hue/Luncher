@@ -1,7 +1,73 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_margin="8dp" android:background="@drawable/white_rounded_bg" android:elevation="16dp" android:padding="14dp">
-    <TextView android:id="@+id/notifAppName" android:layout_width="match_parent" android:layout_height="wrap_content" android:textStyle="bold" android:textColor="#FF000000" android:textSize="14sp" />
-    <TextView android:id="@+id/notifTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FF666666" android:textSize="11sp" />
-    <TextView android:id="@+id/notifContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FF222222" android:textSize="14sp" android:layout_marginTop="6dp" android:maxLines="20" />
-    <LinearLayout android:id="@+id/notifActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="12dp" />
-</LinearLayout>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="14dp"
+    app:cardCornerRadius="22dp"
+    app:cardElevation="8dp"
+    app:strokeWidth="0dp"
+    android:backgroundTint="#FFFFFF">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="18dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/notifAppName"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="wrap_content"
+                android:text="Gmail - moi"
+                android:textStyle="bold"
+                android:textSize="15sp"
+                android:textColor="#111111"
+                android:maxLines="1"
+                android:ellipsize="end"/>
+
+            <TextView
+                android:id="@+id/notifTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="maintenant"
+                android:textSize="11sp"
+                android:textColor="#8A8A8A"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/notifTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="Titre"
+            android:textSize="13sp"
+            android:textColor="#555555"
+            android:visibility="gone"/>
+
+        <TextView
+            android:id="@+id/notifContent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:text="Contenu du message qui peut être un peu long..."
+            android:textSize="15sp"
+            android:textColor="#222222"
+            android:lineSpacingExtra="3dp"/>
+
+        <LinearLayout
+            android:id="@+id/notifActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="16dp"/>
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

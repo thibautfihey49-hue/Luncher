@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
+import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
 import android.os.Looper
@@ -22,29 +23,31 @@ class FloatingNotificationService : Service() {
     override fun onStartCommand(i: Intent?, f:Int, s:Int):Int{ showWindow(); refreshAggressive(); return START_STICKY }
     override fun onDestroy(){ try{root?.let{wm?.removeView(it)}}catch(_:Exception){}; NotificationRepository.listener=null; instance=null; super.onDestroy() }
     override fun onBind(i: Intent?)=null
-    private fun showWindow(){ if(root!=null) try{wm?.removeView(root)}catch(_:Exception){}; val scroll=ScrollView(this); val cont=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL; setPadding(12,12,12,12)}; scroll.addView(cont); container=cont; val p=WindowManager.LayoutParams(-1,-2,if(Build.VERSION.SDK_INT>=26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT).apply{gravity=Gravity.TOP; y=100; softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE}; params=p; root=scroll; try{wm?.addView(root,p)}catch(_:Exception){} }
+    private fun showWindow(){ if(root!=null) try{wm?.removeView(root)}catch(_:Exception){}; val scroll=ScrollView(this).apply{isVerticalScrollBarEnabled=false}; val cont=LinearLayout(this).apply{orientation=LinearLayout.VERTICAL; setPadding(16,16,16,16)}; scroll.addView(cont); container=cont; val p=WindowManager.LayoutParams(-1,-2,if(Build.VERSION.SDK_INT>=26) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY else WindowManager.LayoutParams.TYPE_PHONE, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL, PixelFormat.TRANSLUCENT).apply{gravity=Gravity.TOP; y=90; softInputMode=WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE}; params=p; root=scroll; try{wm?.addView(root,p)}catch(_:Exception){} }
     private fun enableKb(e: EditText){ try{ params!!.flags=params!!.flags and WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE.inv(); wm?.updateViewLayout(root,params); e.requestFocus(); (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).showSoftInput(e,0)}catch(_:Exception){} }
     private fun disableKb(){ try{ params!!.flags=params!!.flags or WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE; wm?.updateViewLayout(root,params); (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager).hideSoftInputFromWindow(root?.windowToken,0)}catch(_:Exception){} }
+    private fun roundedBg(color:Int, radius:Float): GradientDrawable { return GradientDrawable().apply{ setColor(color); cornerRadius=radius } }
     fun refreshAggressive(){
         val cont=container?:return; if(wm==null||root==null){ showWindow(); return }; cont.removeAllViews(); if(NotificationRepository.notifs.isEmpty()){ root?.visibility=View.GONE; disableKb(); return }; root?.visibility=View.VISIBLE; val inf=LayoutInflater.from(this)
         for(notif in NotificationRepository.notifs.toList()){
             if(notif.packageName=="android") continue
             val card=inf.inflate(R.layout.item_notification_float,cont,false)
-            card.findViewById<TextView>(R.id.notifAppName).text="${notif.appName} - ${notif.title}"
+            card.findViewById<TextView>(R.id.notifAppName).text="${notif.appName} • ${notif.title}"
+            try{ card.findViewById<TextView>(R.id.notifTime).text="maintenant" }catch(_:Exception){}
             card.findViewById<TextView>(R.id.notifContent).text=notif.content
             val actionsBox=card.findViewById<LinearLayout>(R.id.notifActions); actionsBox.removeAllViews()
-            
             val replyAction = notif.notification.actions?.firstOrNull{ it.remoteInputs!=null && it.remoteInputs.isNotEmpty() }
             
-            // TOUJOURS AFFICHER LE CHAMP DE REPONSE
-            val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,16,0,0)}
-            val ed=EditText(this).apply{hint="Répondre..."; setTextColor(Color.BLACK); setHintTextColor(Color.GRAY); setBackgroundColor(Color.WHITE); setPadding(24,24,24,24); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(0,0,8,0)}}
-            val send=TextView(this).apply{text="ENVOYER"; setTextColor(Color.WHITE); setBackgroundColor(Color.BLACK); setPadding(28,28,28,28); gravity=Gravity.CENTER}
+            // Champ réponse design
+            val replyContainer = LinearLayout(this).apply{orientation=LinearLayout.VERTICAL; setPadding(0,14,0,0)}
+            val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; background=roundedBg(Color.parseColor("#FFF2F2F2"), 32f); setPadding(6,6,6,6)}
+            val ed=EditText(this).apply{hint="Répondre..."; setHintTextColor(Color.parseColor("#FF999999")); setTextColor(Color.BLACK); background=null; setPadding(18,12,18,12); layoutParams=LinearLayout.LayoutParams(0,-2,1f); maxLines=4; textSize=15f}
+            val send=TextView(this).apply{text="↑"; textSize=18f; setTextColor(Color.WHITE); background=roundedBg(Color.BLACK, 60f); setPadding(28,12,28,12); gravity=Gravity.CENTER; layoutParams=LinearLayout.LayoutParams(-2,-2).apply{setMargins(6,0,0,0)}}
             row.addView(ed); row.addView(send)
-            actionsBox.addView(row)
+            replyContainer.addView(row)
+            actionsBox.addView(replyContainer)
             ed.setOnClickListener{ enableKb(ed) }
             ed.setOnFocusChangeListener{ _,h-> if(h) enableKb(ed) }
-            
             send.setOnClickListener{
                 val txt=ed.text.toString().trim(); if(txt.isEmpty()) return@setOnClickListener
                 var sent=false
@@ -57,23 +60,27 @@ class FloatingNotificationService : Service() {
                         replyAction.actionIntent.send(this,0,fill)
                         sent=true
                     }
-                }catch(e:Exception){}
+                }catch(_:Exception){}
                 if(sent){
-                    Toast.makeText(this,"✓ Envoyé à ${notif.appName}",0).show()
+                    Toast.makeText(this,"✓ Envoyé",0).show()
                     disableKb()
                     Handler(Looper.getMainLooper()).postDelayed({
                         NotificationRepository.notifs.remove(notif)
                         try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}
                         refreshAggressive()
-                    }, 800)
+                    }, 700)
                 }else{
-                    Toast.makeText(this,"Pas d'action Répondre sur cette notif (mail à soi-même). Envoie depuis un autre compte.",1).show()
+                    Toast.makeText(this,"Réponse impossible sur ce mail à soi-même",0).show()
                 }
             }
-
-            fun btn(t:String,c:Int,cl:()->Unit){ val v=TextView(this).apply{text=t; setTextColor(c); setPadding(24,20,24,20); setBackgroundColor(Color.parseColor("#FFEEEEEE")); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,8,0,0)}; setOnClickListener{cl()}}; actionsBox.addView(v) }
-            btn("FERMER", Color.RED){ NotificationRepository.notifs.remove(notif); try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}; refreshAggressive() }
-            btn("OUVRIR", Color.BLACK){ try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i)}catch(_:Exception){} }
+            // Boutons secondaires plus discrets
+            val secondaryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,12,0,0)}
+            fun miniBtn(t:String, col:Int, cl:()->Unit): TextView {
+                return TextView(this).apply{text=t; setTextColor(col); textSize=13f; typeface=android.graphics.Typeface.DEFAULT_BOLD; background=roundedBg(Color.parseColor("#FFEFEFEF"), 20f); setPadding(20,10,20,10); layoutParams=LinearLayout.LayoutParams(-2,-2).apply{setMargins(0,0,10,0)}; setOnClickListener{cl()}}
+            }
+            secondaryRow.addView(miniBtn("Fermer", Color.parseColor("#FFCC0000")){ NotificationRepository.notifs.remove(notif); try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}; refreshAggressive() })
+            secondaryRow.addView(miniBtn("Ouvrir", Color.parseColor("#FF444444")){ try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i)}catch(_:Exception){} })
+            actionsBox.addView(secondaryRow)
             cont.addView(card)
         }
     }
