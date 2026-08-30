@@ -1,80 +1,75 @@
 package com.luncher
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.view.View
-import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import java.util.concurrent.Executors
+import android.content.Intent
+import android.view.View
+import android.widget.EditText
 
 class LauncherActivity : AppCompatActivity() {
-    private var recyclerApps: RecyclerView? = null
-    private var searchBar: EditText? = null
-    private var allApps: List<AppInfo> = emptyList()
-    private val bgExecutor = Executors.newSingleThreadExecutor()
-    private val mainHandler = Handler(Looper.getMainLooper())
-    private val packageReceiver = object: BroadcastReceiver(){ override fun onReceive(c: Context?, i: Intent?){ loadAppsFast() } }
-
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_launcher)
-        recyclerApps = findViewById(R.id.recyclerApps)
-        searchBar = findViewById(R.id.searchBar)
-        recyclerApps?.layoutManager = GridLayoutManager(this, 4)
-        recyclerApps?.setHasFixedSize(true)
-        recyclerApps?.itemAnimator = null
-        recyclerApps?.adapter = AppAdapter(mutableListOf()) { app ->
-            try { startActivity(packageManager.getLaunchIntentForPackage(app.packageName)) } catch(_:Exception){}
+        try {
+            super.onCreate(savedInstanceState)
+            setContentView(R.layout.activity_launcher)
+            initRealLauncher()
+        } catch(e: Exception) {
+            // Au lieu de fermer, on affiche l'erreur
+            val tv = TextView(this)
+            tv.text = "CRASH Launcher:
+" + e.message + "
+
+" + e.stackTrace.take(10).joinToString("
+")
+            tv.textSize = 14f
+            tv.setPadding(20,100,20,20)
+            setContentView(tv)
         }
-        findViewById<View>(R.id.clearSearch)?.setOnClickListener { searchBar?.text?.clear() }
-        searchBar?.addTextChangedListener(object: android.text.TextWatcher{
-            override fun afterTextChanged(s: android.text.Editable?){
-                val q = s.toString()
-                val adapter = recyclerApps?.adapter as? AppAdapter ?: return
-                if(q.isBlank()) adapter.update(allApps) else adapter.update(allApps.filter{ it.label.contains(q, true) })
+    }
+    private fun initRealLauncher() {
+        try {
+            val recycler = findViewById<RecyclerView>(R.id.recyclerApps)
+            val search = findViewById<EditText>(R.id.searchBar)
+            recycler?.layoutManager = GridLayoutManager(this, 4)
+            val adapter = AppAdapter(mutableListOf()) { app ->
+                try { startActivity(packageManager.getLaunchIntentForPackage(app.packageName)) } catch(_:Exception){}
             }
-            override fun beforeTextChanged(a:CharSequence?,b:Int,c:Int,d:Int){}
-            override fun onTextChanged(a:CharSequence?,b:Int,c:Int,d:Int){}
-        })
-        findViewById<View>(R.id.btnPhone)?.setOnClickListener { try{ startActivity(Intent(this, PhoneAppActivity::class.java)) }catch(_:Exception){} }
-        findViewById<View>(R.id.btnSms)?.setOnClickListener { try{ startActivity(Intent(this, SmsAppActivity::class.java)) }catch(_:Exception){} }
-        findViewById<View>(R.id.btnFiles)?.setOnClickListener { try{ startActivity(Intent(this, FileManagerActivity::class.java)) }catch(_:Exception){} }
-
-        val filter = IntentFilter().apply{ addAction(Intent.ACTION_PACKAGE_ADDED); addAction(Intent.ACTION_PACKAGE_REMOVED); addDataScheme("package") }
-        try{ registerReceiver(packageReceiver, filter) }catch(_:Exception){}
-        loadAppsFast()
-    }
-
-    private fun loadAppsFast(){
-        bgExecutor.execute{
-            try{
-                val pm = packageManager
-                val intent = Intent(Intent.ACTION_MAIN, null).apply{ addCategory(Intent.CATEGORY_LAUNCHER) }
-                val apps = pm.queryIntentActivities(intent, 0).mapNotNull{
-                    try{
-                        val label = it.loadLabel(pm).toString()
-                        val pkg = it.activityInfo.packageName
-                        if(pkg == packageName) null else AppInfo(label, pkg, it.activityInfo.name, it.loadIcon(pm))
-                    }catch(_:Exception){ null }
-                }.sortedBy{ it.label.lowercase() }
-                mainHandler.post{
-                    allApps = apps
-                    (recyclerApps?.adapter as? AppAdapter)?.update(apps)
+            recycler?.adapter = adapter
+            
+            // Charge apps en safe
+            Thread {
+                try {
+                    val pm = packageManager
+                    val intent = Intent(Intent.ACTION_MAIN, null).apply{ addCategory(Intent.CATEGORY_LAUNCHER) }
+                    val apps = pm.queryIntentActivities(intent, 0).mapNotNull {
+                        try {
+                            val label = it.loadLabel(pm).toString()
+                            val pkg = it.activityInfo.packageName
+                            if(pkg == packageName) null else AppInfo(label, pkg, it.activityInfo.name, it.loadIcon(pm))
+                        } catch(_:Exception){ null }
+                    }.sortedBy{ it.label.lowercase() }
+                    runOnUiThread { try{ adapter.update(apps) }catch(_:Exception){} }
+                } catch(e:Exception){
+                    runOnUiThread {
+                        val tv = TextView(this)
+                        tv.text = "Erreur load apps: "+e.message
+                        setContentView(tv)
+                    }
                 }
-            }catch(_:Exception){}
-        }
-    }
+            }.start()
 
-    override fun onDestroy(){
-        super.onDestroy()
-        try{ unregisterReceiver(packageReceiver) }catch(_:Exception){}
-        bgExecutor.shutdown()
+            findViewById<View>(R.id.btnPhone)?.setOnClickListener { try{ startActivity(Intent(this, PhoneAppActivity::class.java)) }catch(e:Exception){ showError(e) } }
+            findViewById<View>(R.id.btnSms)?.setOnClickListener { try{ startActivity(Intent(this, SmsAppActivity::class.java)) }catch(e:Exception){ showError(e) } }
+            findViewById<View>(R.id.btnFiles)?.setOnClickListener { try{ startActivity(Intent(this, FileManagerActivity::class.java)) }catch(e:Exception){ showError(e) } }
+
+        } catch(e: Exception){ showError(e) }
+    }
+    private fun showError(e: Exception){
+        val tv = TextView(this)
+        tv.text = "ERREUR: "+e.message+"
+"+e.stackTrace.take(15).joinToString("
+")
+        setContentView(tv)
     }
 }
