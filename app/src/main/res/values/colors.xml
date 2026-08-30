@@ -1,1 +1,6 @@
+    <color name="nexus_background">#0A0E14</color>
+    <color name="nexus_glass_dark">#0FFFFFFF</color>
+    <color name="nexus_glass_border">#33FFFFFF</color>
+    <color name="nexus_text_primary">#FFFFFF</color>
+    <color name="nexus_text_secondary">#99FFFFFF</color>
 <resources><color name="black">#000000</color><color name="white">#FFFFFF</color><color name="transparent">#00000000</color></resources>
