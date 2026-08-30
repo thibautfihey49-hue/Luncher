@@ -17,12 +17,8 @@ class FloatingNotificationService : Service() {
     private var root: View? = null
     private var container: LinearLayout? = null
     private var params: WindowManager.LayoutParams? = null
-    companion object {
-        var instance: FloatingNotificationService? = null
-        fun show(c: Context){ val i=Intent(c,FloatingNotificationService::class.java); if(Build.VERSION.SDK_INT>=26) c.startForegroundService(i) else c.startService(i) }
-        fun forceRefresh(){ instance?.refreshAggressive() }
-    }
-    override fun onCreate(){ super.onCreate(); instance=this; wm=getSystemService(Context.WINDOW_SERVICE) as WindowManager; if(Build.VERSION.SDK_INT>=26){ val ch=NotificationChannel("luncher_aggressive","Luncher",NotificationManager.IMPORTANCE_LOW); (getSystemService(NotificationManager::class.java)).createNotificationChannel(ch) }; startForeground(1001, NotificationCompat.Builder(this,"luncher_aggressive").setContentTitle("Luncher actif").setSmallIcon(R.drawable.ic_launcher_foreground).build()); showWindow(); NotificationRepository.listener={refreshAggressive()} }
+    companion object { var instance: FloatingNotificationService? = null; fun show(c: Context){ val i=Intent(c,FloatingNotificationService::class.java); if(Build.VERSION.SDK_INT>=26) c.startForegroundService(i) else c.startService(i) }; fun forceRefresh(){ instance?.refreshAggressive() } }
+    override fun onCreate(){ super.onCreate(); instance=this; wm=getSystemService(Context.WINDOW_SERVICE) as WindowManager; if(Build.VERSION.SDK_INT>=26){ val ch=NotificationChannel("luncher_aggressive","Luncher",NotificationManager.IMPORTANCE_LOW); (getSystemService(NotificationManager::class.java)).createNotificationChannel(ch) }; startForeground(1001, NotificationCompat.Builder(this,"luncher_aggressive").setContentTitle("Luncher").setSmallIcon(R.drawable.ic_launcher_foreground).build()); showWindow(); NotificationRepository.listener={refreshAggressive()} }
     override fun onStartCommand(i: Intent?, f:Int, s:Int):Int{ showWindow(); refreshAggressive(); return START_STICKY }
     override fun onDestroy(){ try{root?.let{wm?.removeView(it)}}catch(_:Exception){}; NotificationRepository.listener=null; instance=null; super.onDestroy() }
     override fun onBind(i: Intent?)=null
@@ -35,56 +31,44 @@ class FloatingNotificationService : Service() {
         for(notif in NotificationRepository.notifs.toList()){
             if(notif.packageName=="android") continue
             val card=inf.inflate(R.layout.item_notification_float,cont,false)
-            card.findViewById<TextView>(R.id.notifAppName).text=notif.appName
-            card.findViewById<TextView>(R.id.notifTitle).text=notif.title
-            card.findViewById<TextView>(R.id.notifContent).apply{text=notif.content; maxLines=30}
+            card.findViewById<TextView>(R.id.notifAppName).text="${notif.appName} - ${notif.title}"
+            card.findViewById<TextView>(R.id.notifContent).text=notif.content
             val actionsBox=card.findViewById<LinearLayout>(R.id.notifActions); actionsBox.removeAllViews()
+
             val replyAction = notif.notification.actions?.firstOrNull{ it.remoteInputs!=null && it.remoteInputs.isNotEmpty() }
-            val replyRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,18,0,0)}
-            val ed=EditText(this).apply{hint="Répondre à ${notif.appName}..."; setTextColor(Color.BLACK); setHintTextColor(Color.GRAY); setBackgroundColor(Color.WHITE); setPadding(28,28,28,28); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(0,0,10,0)}}
-            val send=TextView(this).apply{text="ENVOYER"; setTextColor(Color.WHITE); setBackgroundColor(Color.BLACK); setPadding(32,32,32,32); gravity=Gravity.CENTER}
-            replyRow.addView(ed); replyRow.addView(send)
-            actionsBox.addView(replyRow)
-            ed.setOnFocusChangeListener{ _, has-> if(has) enableKb(ed) }
-            ed.setOnClickListener{ enableKb(ed) }
 
-            send.setOnClickListener{
-                val txt=ed.text.toString().trim(); if(txt.isEmpty()) return@setOnClickListener
-                var ok=false
-                try{
-                    if(replyAction!=null){
-                        // METHODE OFFICIELLE GOOGLE
-                        val bundle=android.os.Bundle()
-                        for(ri in replyAction.remoteInputs){ bundle.putCharSequence(ri.resultKey, txt) }
-                        val intent=Intent().apply{ putExtras(bundle) }
-                        // Important : addResultsToIntent attend le tableau de RemoteInput
-                        android.app.RemoteInput.addResultsToIntent(replyAction.remoteInputs, intent, bundle)
-                        replyAction.actionIntent.send(this, 0, intent)
-                        ok=true
-                        Toast.makeText(this,"Envoi en cours...",0).show()
-                    }
-                }catch(e:Exception){ Toast.makeText(this,"Erreur reply: ${e.message}",1).show() }
-
-                if(!ok){
-                    // FALLBACK Gmail: ouvre la réponse Gmail
+            if(replyAction!=null){
+                val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,16,0,0)}
+                val ed=EditText(this).apply{hint="Répondre..."; setTextColor(Color.BLACK); setBackgroundColor(Color.WHITE); setPadding(24,24,24,24); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{setMargins(0,0,8,0)}}
+                val send=TextView(this).apply{text="ENVOYER"; setTextColor(Color.WHITE); setBackgroundColor(Color.BLACK); setPadding(28,28,28,28); gravity=Gravity.CENTER}
+                row.addView(ed); row.addView(send)
+                actionsBox.addView(row)
+                ed.setOnFocusChangeListener{ _, h-> if(h) enableKb(ed) }
+                ed.setOnClickListener{ enableKb(ed) }
+                send.setOnClickListener{
+                    val txt=ed.text.toString().trim(); if(txt.isEmpty()) return@setOnClickListener
                     try{
-                        val i=packageManager.getLaunchIntentForPackage(notif.packageName)
-                        i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        startActivity(i)
-                        Toast.makeText(this,"Ouverture ${notif.appName}",0).show()
-                    }catch(_:Exception){}
+                        val b=android.os.Bundle()
+                        for(ri in replyAction.remoteInputs) b.putCharSequence(ri.resultKey, txt)
+                        val fill=Intent()
+                        android.app.RemoteInput.addResultsToIntent(replyAction.remoteInputs, fill, b)
+                        replyAction.actionIntent.send(this,0,fill)
+                        Toast.makeText(this,"✓ Envoyé",0).show()
+                        disableKb()
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            NotificationRepository.notifs.remove(notif)
+                            try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}
+                            refreshAggressive()
+                        }, 800)
+                    }catch(e:Exception){ Toast.makeText(this,"Erreur: ${e.message}",1).show() }
                 }
-
-                disableKb()
-                // On attend 1.5s que Gmail/WhatsApp envoie VRAIMENT avant de supprimer
-                Handler(Looper.getMainLooper()).postDelayed({
-                    NotificationRepository.notifs.remove(notif)
-                    try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}
-                    refreshAggressive()
-                }, 1500)
+            } else {
+                // PAS DE REPLY POSSIBLE - on explique
+                val info=TextView(this).apply{text="Réponse directe impossible pour cette notif (Gmail déjà ouvert). Ferme Gmail et attends une nouvelle notif."; setTextColor(Color.parseColor("#FFAA0000")); textSize=12f; setPadding(0,12,0,0)}
+                actionsBox.addView(info)
             }
 
-            fun addBtn(t:String,c:Int,cl:()->Unit){ val b=TextView(this).apply{text=t; setTextColor(c); setPadding(26,22,26,22); setBackgroundColor(Color.parseColor("#FFEEEEEE")); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,10,0,0)}; setOnClickListener{cl()}}; actionsBox.addView(b) }
+            fun addBtn(t:String,c:Int,cl:()->Unit){ val b=TextView(this).apply{text=t; setTextColor(c); setPadding(24,20,24,20); setBackgroundColor(Color.parseColor("#FFEEEEEE")); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{setMargins(0,8,0,0)}; setOnClickListener{cl()}}; actionsBox.addView(b) }
             addBtn("FERMER", Color.RED){ NotificationRepository.notifs.remove(notif); try{NotificationListener.getInstance()?.cancelNotif(notif.sbnKey)}catch(_:Exception){}; refreshAggressive() }
             addBtn("OUVRIR", Color.BLACK){ try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i)}catch(_:Exception){} }
             cont.addView(card)
