@@ -1,0 +1,5 @@
+-keep class com.luncher.** { *; }
+-optimizations!code/simplification/arithmetic,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-dontwarn **
