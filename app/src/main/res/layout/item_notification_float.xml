@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardCornerRadius="20dp"
-    app:cardElevation="8dp"
-    app:cardBackgroundColor="#FFFFFF">
+<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="14dp" app:cardCornerRadius="22dp" app:cardElevation="10dp" app:cardBackgroundColor="#FFFFFF">
     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="18dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical">
-            <TextView android:id="@+id/notifAppName" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Gmail" android:textStyle="bold" android:textSize="14sp" android:textColor="#111111" android:maxLines="1" android:ellipsize="end"/>
+            <TextView android:id="@+id/notifAppName" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:textStyle="bold" android:textSize="14sp" android:textColor="#111111"/>
             <TextView android:id="@+id/notifTime" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="maintenant" android:textSize="11sp" android:textColor="#8A8A8A"/>
         </LinearLayout>
         <TextView android:id="@+id/notifTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:visibility="gone"/>
-        <TextView android:id="@+id/notifContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:textSize="15sp" android:textColor="#222222"/>
+        <TextView android:id="@+id/notifContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:textSize="15sp" android:textColor="#222222" android:lineSpacingExtra="2dp"/>
+        <ImageView android:id="@+id/notifImage" android:layout_width="match_parent" android:layout_height="200dp" android:layout_marginTop="12dp" android:scaleType="centerCrop" android:visibility="gone" android:background="#F0F0F0"/>
+        <LinearLayout android:id="@+id/notifVoiceContainer" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:layout_marginTop="12dp" android:visibility="gone" android:background="#F6F6F6" android:padding="12dp">
+            <TextView android:text="🎤" android:textSize="22sp" android:layout_width="wrap_content" android:layout_height="wrap_content"/>
+            <TextView android:id="@+id/notifVoiceText" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Message vocal" android:textSize="14sp" android:textColor="#444444" android:layout_marginStart="10dp"/>
+            <TextView android:id="@+id/playVoice" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="▶️ Écouter" android:textSize="13sp" android:textColor="#FFFFFF" android:background="#000000" android:padding="10dp"/>
+        </LinearLayout>
         <LinearLayout android:id="@+id/notifActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="14dp"/>
     </LinearLayout>
 </androidx.cardview.widget.CardView>
