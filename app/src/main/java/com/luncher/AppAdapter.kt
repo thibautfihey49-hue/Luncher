@@ -5,7 +5,6 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-
 class AppAdapter(private var apps: MutableList<AppInfo>, private val onClick: (AppInfo)->Unit) : RecyclerView.Adapter<AppAdapter.H>() {
     class H(v: View): RecyclerView.ViewHolder(v){
         val icon: ImageView? = v.findViewById(R.id.appIcon)
@@ -21,7 +20,7 @@ class AppAdapter(private var apps: MutableList<AppInfo>, private val onClick: (A
             H(tv)
         }
     }
-    override fun getItemCount() = apps.size
+    override fun getItemCount(): Int = try{ apps.size }catch(_:Exception){0}
     override fun onBindViewHolder(h: H, pos: Int) {
         try{
             val app = apps[pos]
