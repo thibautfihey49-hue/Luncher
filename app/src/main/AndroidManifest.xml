@@ -18,7 +18,10 @@
     <uses-permission android:name="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
         tools:ignore="ProtectedPermissions" />
 
-    <application
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+ <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+ <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+ <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
@@ -42,22 +45,28 @@
         </activity>
 
         <service
-            android:name=".data.NotificationListener"
             android:label="Luncher Notifications"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
         </service>
 
         <service
-            android:name=".data.FloatingNotificationService"
             android:exported="false"
             android:foregroundServiceType="specialUse">
             <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="floatingNotifications"/>
         </service>
 
-    </application>
+     <activity android:name=".FileManagerActivity" android:exported="false" />
+ <activity android:name=".OverlayNotifService" android:exported="false" />
+ <service android:name=".OverlayNotifService" android:exported="false" />
+ <receiver android:name=".CallReceiver" android:exported="true">
+ <intent-filter><action android:name="android.intent.action.PHONE_STATE" /></intent-filter>
+ </receiver>
+ <receiver android:name=".SmsReceiver" android:exported="true" android:permission="android.permission.BROADCAST_SMS">
+ <intent-filter android:priority="1000"><action android:name="android.provider.Telephony.SMS_RECEIVE" /></intent-filter>
+ </receiver>
+ </application>
 </manifest>
 

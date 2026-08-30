@@ -74,7 +74,7 @@ class LauncherActivity : AppCompatActivity() {
         drawerContainer = findViewById(R.id.drawerContainer)
         appRecycler = findViewById(R.id.appRecycler)
         searchBar = findViewById(R.id.searchBar)
-        clearSearch = findViewById(R.id.clearSearch) as? TextView
+        clearSearch = findViewById(R.id.clearSearch) as? TextView as? TextView
         clearSearch?.setOnClickListener { searchBar.text.clear() }
         drawerHandle = findViewById(R.id.drawerHandle)
         drawerSearchHandle = findViewById(R.id.drawerSearchHandle)
@@ -327,7 +327,7 @@ class LauncherActivity : AppCompatActivity() {
     private fun checkAndShowPermissions(): Boolean {
         val hasAsked = prefs.getBoolean("permissions_asked", false)
         val overlayPerm = Settings.canDrawOverlays(this)
-        val notifPerm = isNotificationListenerEnabled()
+        val notifPerm = is// removedEnabled()
         val storageOk = if (android.os.Build.VERSION.SDK_INT >= 33) {
             ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_IMAGES) == PackageManager.PERMISSION_GRANTED
         } else {
@@ -344,7 +344,7 @@ class LauncherActivity : AppCompatActivity() {
             val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:$packageName"))
             startActivity(intent)
         }
-        if (!isNotificationListenerEnabled()) {
+        if (!is// removedEnabled()) {
             val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
             startActivity(intent)
         }
@@ -360,7 +360,7 @@ class LauncherActivity : AppCompatActivity() {
         permissionLauncher.launch(perms.toTypedArray())
     }
 
-    private fun isNotificationListenerEnabled(): Boolean {
+    private fun is// removedEnabled(): Boolean {
         val flat = Settings.Secure.getString(contentResolver, "enabled_notification_listeners") ?: return false
         return flat.contains(packageName)
     }
