@@ -6,20 +6,17 @@ data class NotifItem(val sbnKey: String, val packageName: String, val appName: S
 object NotificationRepository {
     val notifs = mutableListOf<NotifItem>()
     var listener: (() -> Unit)? = null
-    fun add(sbn: StatusBarNotification, appName: String) {
-        try {
-            val n = sbn.notification
-            val extras: Bundle = n.extras
-            val title = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: extras.getCharSequence(Notification.EXTRA_TITLE_BIG)?.toString() ?: ""
-            val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-            val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-            val summary = extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString()
-            val content = bigText?.takeIf{it.isNotBlank()} ?: text?.takeIf{it.isNotBlank()} ?: summary ?: ""
+    fun add(sbn: StatusBarNotification, appName: String){
+        try{
+            val n=sbn.notification
+            val e=n.extras
+            val title=e.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: e.getCharSequence(Notification.EXTRA_TITLE_BIG)?.toString() ?: appName
+            val content=e.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: e.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: e.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString() ?: ""
             notifs.removeAll{it.sbnKey==sbn.key}
-            notifs.add(0,NotifItem(sbn.key,sbn.packageName,appName,title,content,System.currentTimeMillis(),n))
+            notifs.add(0, NotifItem(sbn.key, sbn.packageName, appName, title, content, System.currentTimeMillis(), n))
             if(notifs.size>20) notifs.removeAt(notifs.size-1)
             listener?.invoke()
-        } catch (_:Exception){}
+        }catch(_:Exception){}
     }
     fun remove(key: String){ notifs.removeAll{it.sbnKey==key}; listener?.invoke() }
 }
