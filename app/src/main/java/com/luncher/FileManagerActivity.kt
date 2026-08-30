@@ -3,7 +3,6 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.os.Environment
-import android.os.StatFs
 import android.view.View
 import android.widget.EditText
 import android.widget.TextView
@@ -16,9 +15,7 @@ import java.io.File
 
 class FileManagerActivity : AppCompatActivity() {
     private lateinit var recycler: RecyclerView
-    private lateinit var pathView: TextView
     private lateinit var search: EditText
-    private lateinit var sdInfo: TextView
     private var currentPath: File = Environment.getExternalStorageDirectory()
     private var allFiles: List<File> = emptyList()
     private var clipboard: File? = null
@@ -28,23 +25,20 @@ class FileManagerActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_file_manager)
         recycler = findViewById(R.id.recyclerFiles)
-        pathView = findViewById(R.id.pathView)
         search = findViewById(R.id.searchFile)
-        sdInfo = findViewById(R.id.sdInfo)
         recycler.layoutManager = LinearLayoutManager(this)
         recycler.setHasFixedSize(true)
+        recycler.itemAnimator = null
 
-        findViewById<View>(R.id.back).setOnClickListener { goBack() }
-        findViewById<View>(R.id.btnPaste).setOnClickListener { paste() }
-        findViewById<View>(R.id.btnNewFolder).setOnClickListener { newFolder() }
-        findViewById<View>(R.id.btnSearch).setOnClickListener { search.requestFocus() }
-        findViewById<View>(R.id.btnRecent).setOnClickListener { Toast.makeText(this,"Récent bientôt",0).show() }
-        findViewById<View>(R.id.btnParcourir).setOnClickListener { load(Environment.getExternalStorageDirectory()) }
+        findViewById<View>(R.id.btnParcourir)?.setOnClickListener { load(Environment.getExternalStorageDirectory()) }
+        findViewById<View>(R.id.btnRecent)?.setOnClickListener { Toast.makeText(this,"Récent bientôt",0).show() }
+        findViewById<View>(R.id.btnPaste)?.setOnClickListener { paste() }
+        findViewById<View>(R.id.btnNewFolder)?.setOnClickListener { newFolder() }
 
-        findViewById<View>(R.id.catDoc).setOnClickListener { filterCategory(listOf("pdf","doc","docx","txt")) }
-        findViewById<View>(R.id.catImg).setOnClickListener { filterCategory(listOf("jpg","jpeg","png","webp","gif")) }
-        findViewById<View>(R.id.catVid).setOnClickListener { filterCategory(listOf("mp4","mkv","avi","mov")) }
-        findViewById<View>(R.id.catMusic).setOnClickListener { filterCategory(listOf("mp3","m4a","wav","flac")) }
+        findViewById<View>(R.id.catDoc)?.setOnClickListener { filterCategory(listOf("pdf","doc","docx","txt")) }
+        findViewById<View>(R.id.catImg)?.setOnClickListener { filterCategory(listOf("jpg","jpeg","png","webp","gif")) }
+        findViewById<View>(R.id.catVid)?.setOnClickListener { filterCategory(listOf("mp4","mkv","avi","mov")) }
+        findViewById<View>(R.id.catMusic)?.setOnClickListener { filterCategory(listOf("mp3","m4a","wav","flac")) }
 
         search.addTextChangedListener(object: android.text.TextWatcher{
             override fun afterTextChanged(s: android.text.Editable?){ filter(s.toString()) }
@@ -52,24 +46,11 @@ class FileManagerActivity : AppCompatActivity() {
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int){}
         })
 
-        updateSdInfo()
         load(currentPath)
-    }
-
-    private fun updateSdInfo(){
-        try{
-            val stat = StatFs(Environment.getExternalStorageDirectory().path)
-            val total = stat.blockCountLong * stat.blockSizeLong
-            val free = stat.availableBlocksLong * stat.blockSizeLong
-            val used = total - free
-            sdInfo.text = "${used/1024/1024/1024} GB / ${total/1024/1024/1024} GB"
-            findViewById<com.google.android.material.progressindicator.LinearProgressIndicator>(R.id.sdProgress).setProgressCompat(((used.toFloat()/total.toFloat())*100).toInt(), true)
-        }catch(e:Exception){ sdInfo.text="Stockage interne" }
     }
 
     private fun load(dir: File){
         currentPath = dir
-        pathView.text = dir.name.ifBlank { "Stockage interne" }
         try{
             allFiles = dir.listFiles()?.sortedWith(compareBy({!it.isDirectory}, {it.name.lowercase()}))?: emptyList()
             recycler.adapter = FileAdapter(allFiles)
@@ -83,12 +64,10 @@ class FileManagerActivity : AppCompatActivity() {
 
     private fun filterCategory(exts: List<String>){
         val found = mutableListOf<File>()
-        try{ currentPath.walkTopDown().forEach{ if(!it.isDirectory && it.extension.lowercase() in exts && found.size<100) found.add(it) } }catch(e:Exception){}
+        try{ Environment.getExternalStorageDirectory().walkTopDown().forEach{ if(!it.isDirectory && it.extension.lowercase() in exts && found.size<80) found.add(it) } }catch(e:Exception){}
         recycler.adapter = FileAdapter(found)
         Toast.makeText(this,"${found.size} fichiers",0).show()
     }
-
-    private fun goBack(){ if(currentPath.parentFile!=null) load(currentPath.parentFile!!) else finish() }
 
     private fun newFolder(){
         val input = EditText(this).apply{ hint="Nom du dossier" }
@@ -110,13 +89,10 @@ class FileManagerActivity : AppCompatActivity() {
         override fun getItemCount()=files.size
         override fun onBindViewHolder(h:H, pos:Int){
             val f=files[pos]; val isDir=f.isDirectory
-            h.icon.text=if(isDir) "📁" else when(f.extension.lowercase()){ "jpg","jpeg","png","webp"->"🖼️"; "mp4","mkv"->"🎬"; "mp3","m4a"->"🎵"; "pdf"->"📄"; "zip"->"🗜️"; "apk"->"📦"; else->"📄" }
+            h.icon.text=if(isDir) "▭" else when(f.extension.lowercase()){ "jpg","jpeg","png","webp"->"◫"; "mp4","mkv"->"▶"; "mp3","m4a"->"♫"; "pdf"->"≡"; "zip"->"◫"; "apk"->"◍"; else->"≡" }
             h.name.text=f.name
-            h.info.text=if(isDir) "${f.listFiles()?.size?:0} éléments • ${android.text.format.DateFormat.format("dd/MM/yyyy", f.lastModified())}" else "${f.length()/1024} Ko • ${android.text.format.DateFormat.format("dd/MM/yyyy", f.lastModified())}"
-            h.itemView.setOnClickListener{
-                if(isDir) load(f)
-                else{ try{ val uri=FileProvider.getUriForFile(this@FileManagerActivity, "$packageName.provider", f); val mime=when(f.extension.lowercase()){ "jpg","jpeg"->"image/jpeg"; "png"->"image/png"; "pdf"->"application/pdf"; "mp4"->"video/mp4"; "mp3"->"audio/mpeg"; else->"*/*" }; val intent=Intent(Intent.ACTION_VIEW).apply{ setDataAndType(uri, mime); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }; startActivity(intent) }catch(e:Exception){} }
-            }
+            h.info.text=if(isDir) "${f.listFiles()?.size?:0} éléments" else "${f.length()/1024} Ko"
+            h.itemView.setOnClickListener{ if(isDir) load(f) else{ try{ val uri=FileProvider.getUriForFile(this@FileManagerActivity, "$packageName.provider", f); val mime=when(f.extension.lowercase()){ "jpg","jpeg"->"image/jpeg"; "png"->"image/png"; "pdf"->"application/pdf"; "mp4"->"video/mp4"; "mp3"->"audio/mpeg"; else->"*/*" }; val intent=Intent(Intent.ACTION_VIEW).apply{ setDataAndType(uri, mime); addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION) }; startActivity(intent) }catch(e:Exception){} } }
             h.itemView.setOnLongClickListener{
                 val opts=arrayOf("Copier","Couper","Renommer","Partager","Supprimer")
                 AlertDialog.Builder(this@FileManagerActivity).setTitle(f.name).setItems(opts){_,which->
