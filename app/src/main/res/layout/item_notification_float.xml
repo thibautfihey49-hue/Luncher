@@ -1,1 +1,7 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" />
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_margin="8dp" android:background="#FFFFFFFF" android:elevation="12dp" android:padding="12dp">
+    <TextView android:id="@+id/notifAppName" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FF000000" android:textStyle="bold" />
+    <TextView android:id="@+id/notifTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FF000000" android:layout_marginTop="4dp" />
+    <TextView android:id="@+id/notifContent" android:layout_width="match_parent" android:layout_height="wrap_content" android:textColor="#FF444444" android:layout_marginTop="2dp" />
+    <LinearLayout android:id="@+id/notifActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:layout_marginTop="8dp" />
+</LinearLayout>
