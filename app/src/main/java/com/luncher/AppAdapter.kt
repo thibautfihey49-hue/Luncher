@@ -1,3 +1,4 @@
+
 package com.luncher
 import android.view.LayoutInflater
 import android.view.View
@@ -11,16 +12,10 @@ class AppAdapter(private var apps: MutableList<AppInfo>, private val onClick: (A
         val label: TextView? = v.findViewById(R.id.appLabel)
     }
     override fun onCreateViewHolder(p: ViewGroup, t: Int): H {
-        return try {
-            val v = LayoutInflater.from(p.context).inflate(R.layout.item_app, p, false)
-            H(v)
-        } catch(e:Exception){
-            val tv = TextView(p.context)
-            tv.layoutParams = ViewGroup.LayoutParams(200,200)
-            H(tv)
-        }
+        val v = LayoutInflater.from(p.context).inflate(R.layout.item_app, p, false)
+        return H(v)
     }
-    override fun getItemCount(): Int = try{ apps.size }catch(_:Exception){0}
+    override fun getItemCount(): Int = apps.size
     override fun onBindViewHolder(h: H, pos: Int) {
         try{
             val app = apps[pos]
@@ -30,9 +25,7 @@ class AppAdapter(private var apps: MutableList<AppInfo>, private val onClick: (A
         }catch(_:Exception){}
     }
     fun update(newApps: List<AppInfo>){
-        try{
-            apps = newApps.toMutableList()
-            notifyDataSetChanged()
-        }catch(_:Exception){}
+        apps = newApps.toMutableList()
+        try{ notifyDataSetChanged() }catch(_:Exception){}
     }
 }
