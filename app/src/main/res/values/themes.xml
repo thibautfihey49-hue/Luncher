@@ -1,7 +1,6 @@
 <resources>
     <style name="Theme.Luncher" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:windowBackground">#F8FAFC</item>
     </style>
     <style name="DialBtn">
         <item name="android:layout_width">0dp</item>
