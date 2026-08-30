@@ -1,24 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#FFF">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="16dp" android:gravity="center_vertical">
-        <TextView android:id="@+id/back" android:layout_width="40dp" android:layout_height="40dp" android:text="←" android:textSize="22sp" android:gravity="center"/>
-        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Messages" android:textSize="22sp" android:textStyle="bold" android:layout_marginStart="12dp"/>
-        <TextView android:id="@+id/btnNew" android:layout_width="wrap_content" android:layout_height="40dp" android:text="+ Nouveau" android:background="#000" android:textColor="#FFF" android:paddingHorizontal="16dp" android:gravity="center"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="#F8F8F9">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:orientation="horizontal" android:gravity="center_vertical" android:padding="16dp" android:background="#FFF">
+        <TextView android:id="@+id/back" android:layout_width="40dp" android:layout_height="40dp" android:text="←" android:textSize="22sp" android:gravity="center" android:background="#F1F3F4"/>
+        <TextView android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Messages" android:textSize="20sp" android:textStyle="bold" android:fontFamily="sans-serif-medium" android:layout_marginStart="12dp"/>
+        <com.google.android.material.card.MaterialCardView android:id="@+id/btnNew" android:layout_width="wrap_content" android:layout_height="40dp" app:cardCornerRadius="20dp" app:cardBackgroundColor="#000"><TextView android:layout_width="wrap_content" android:layout_height="match_parent" android:text="+ Nouveau" android:textColor="#FFF" android:paddingHorizontal="16dp" android:gravity="center" android:textSize="13sp"/></com.google.android.material.card.MaterialCardView>
     </LinearLayout>
-    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerConv" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1"/>
-    <!-- Chat ouvert -->
+    <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerConv" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="6dp" android:clipToPadding="false"/>
+    <!-- CHAT -->
     <LinearLayout android:id="@+id/chatArea" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:visibility="gone" android:background="#FFF">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="56dp" android:padding="12dp" android:gravity="center_vertical" android:background="#FAFAFA">
-            <TextView android:id="@+id/backChat" android:layout_width="40dp" android:layout_height="40dp" android:text="←" android:gravity="center" android:textSize="20sp"/>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="64dp" android:padding="12dp" android:gravity="center_vertical" android:background="#FFF">
+            <TextView android:id="@+id/backChat" android:layout_width="40dp" android:layout_height="40dp" android:text="←" android:gravity="center" android:textSize="20sp" android:background="#F1F3F4"/>
             <TextView android:id="@+id/chatTitle" android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:text="Contact" android:textStyle="bold" android:textSize="16sp" android:layout_marginStart="8dp"/>
         </LinearLayout>
-        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerMsg" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp"/>
+        <androidx.recyclerview.widget.RecyclerView android:id="@+id/recyclerMsg" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:padding="8dp" android:background="#F8F8F9"/>
         <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp" android:gravity="center_vertical" android:background="#FFF">
-            <TextView android:id="@+id/btnImage" android:layout_width="40dp" android:layout_height="40dp" android:text="📷" android:gravity="center" android:textSize="20sp" android:background="#F0F0F0"/>
-            <EditText android:id="@+id/inputMsg" android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp" android:hint="Message" android:background="#F5F5F7" android:paddingHorizontal="16dp" android:layout_marginHorizontal="8dp"/>
-            <TextView android:id="@+id/btnVoice" android:layout_width="40dp" android:layout_height="40dp" android:text="🎤" android:gravity="center" android:textSize="20sp" android:background="#F0F0F0"/>
-            <TextView android:id="@+id/btnSend" android:layout_width="48dp" android:layout_height="48dp" android:text="↑" android:gravity="center" android:textSize="20sp" android:background="#000" android:textColor="#FFF" android:layout_marginStart="8dp"/>
+            <TextView android:id="@+id/btnImage" android:layout_width="44dp" android:layout_height="44dp" android:text="📷" android:gravity="center" android:textSize="20sp" android:background="#F1F3F4"/>
+            <EditText android:id="@+id/inputMsg" android:layout_width="0dp" android:layout_weight="1" android:layout_height="48dp" android:hint="Message" android:background="#F1F3F4" android:paddingHorizontal="16dp" android:layout_marginHorizontal="8dp"/>
+            <TextView android:id="@+id/btnVoice" android:layout_width="44dp" android:layout_height="44dp" android:text="🎤" android:gravity="center" android:textSize="20sp" android:background="#F1F3F4"/>
+            <TextView android:id="@+id/btnSend" android:layout_width="48dp" android:layout_height="48dp" android:text="↑" android:gravity="center" android:textSize="20sp" android:background="#000" android:textColor="#FFF"/>
         </LinearLayout>
-        <TextView android:id="@+id/voiceStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔴 Enregistrement... appuyez pour arrêter" android:gravity="center" android:padding="12dp" android:background="#FFEBEE" android:visibility="gone"/>
+        <TextView android:id="@+id/voiceStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="🔴 Enregistrement..." android:gravity="center" android:padding="12dp" android:background="#FFEBEE" android:visibility="gone"/>
     </LinearLayout>
 </LinearLayout>
