@@ -1,8 +1,452 @@
 [
-  {"id":"nexus_parallax","name":"NEXUS Parallax 3D Sobre","bg":"#0A0E14","glass":"#1AFFFFFF","text":"#FFFFFF","desc":"Dark sobre elegant sans rainbow - verre 3D","dark":true},
-  {"id":"glass_blue","name":"Modern Glass 3D Bleu","bg":"#FFFFFF","glass":"#E3F2FD","text":"#1E293B","desc":"Ton thème actuel blanc/bleu","dark":false},
-  {"id":"frost_white","name":"Frost White Minimal","bg":"#F8FAFC","glass":"#FFFFFF","text":"#0F172A","desc":"Minimal blanc pur","dark":false},
-  {"id":"midnight","name":"Midnight Black Pro","bg":"#000000","glass":"#111827","text":"#F9FAFB","desc":"Noir total pro","dark":true},
-  {"id":"cyberpunk","name":"Cyberpunk Neon","bg":"#0A0A1A","glass":"#FF00FF33","text":"#00FFFF","desc":"Neon rose/cyan","dark":true},
-  {"id":"solar_orange","name":"Solar Orange","bg":"#1A0F00","glass":"#FF6B0033","text":"#FFB347","desc":"Orange chaud","dark":true}
+  {
+    "id": "nexus_parallax",
+    "name": "NEXUS Parallax 3D Sobre",
+    "bg": "#0A0E14",
+    "glass": "#1AFFFFFF",
+    "text": "#FFFFFF",
+    "desc": "Dark sobre elegant sans rainbow",
+    "dark": true
+  },
+  {
+    "id": "midnight_pro",
+    "name": "Midnight Black Pro",
+    "bg": "#000000",
+    "glass": "#111827",
+    "text": "#F9FAFB",
+    "desc": "Noir total pro",
+    "dark": true
+  },
+  {
+    "id": "frost_white",
+    "name": "Frost White Minimal",
+    "bg": "#F8FAFC",
+    "glass": "#FFFFFF",
+    "text": "#0F172A",
+    "desc": "Minimal blanc pur",
+    "dark": false
+  },
+  {
+    "id": "ocean_depth",
+    "name": "Ocean Depth",
+    "bg": "#001122",
+    "glass": "#00A8FF33",
+    "text": "#E0F7FF",
+    "desc": "Bleu océan profond",
+    "dark": true
+  },
+  {
+    "id": "cyberpunk_neon",
+    "name": "Cyberpunk Neon",
+    "bg": "#0A0A1A",
+    "glass": "#FF00FF33",
+    "text": "#00FFFF",
+    "desc": "Neon rose/cyan",
+    "dark": true
+  },
+  {
+    "id": "solar_orange",
+    "name": "Solar Orange",
+    "bg": "#1A0F00",
+    "glass": "#FF6B0033",
+    "text": "#FFB347",
+    "desc": "Orange chaud",
+    "dark": true
+  },
+  {
+    "id": "forest_moss",
+    "name": "Forest Moss",
+    "bg": "#0E1A0E",
+    "glass": "#2D5A2733",
+    "text": "#A8D5A2",
+    "desc": "Vert forêt mousse",
+    "dark": true
+  },
+  {
+    "id": "crimson_velvet",
+    "name": "Crimson Velvet",
+    "bg": "#1A0A0A",
+    "glass": "#8B000033",
+    "text": "#FF6B6B",
+    "desc": "Velours crimson",
+    "dark": true
+  },
+  {
+    "id": "arctic_ice",
+    "name": "Arctic Ice",
+    "bg": "#E0F2FE",
+    "glass": "#FFFFFF",
+    "text": "#0C4A6E",
+    "desc": "Glace arctique",
+    "dark": false
+  },
+  {
+    "id": "sand_dune",
+    "name": "Sand Dune",
+    "bg": "#F5E6D3",
+    "glass": "#D4A57433",
+    "text": "#5D4037",
+    "desc": "Dune de sable",
+    "dark": false
+  },
+  {
+    "id": "lavender_mist",
+    "name": "Lavender Mist",
+    "bg": "#1A1225",
+    "glass": "#9C88FF33",
+    "text": "#E8DAEF",
+    "desc": "Brume lavande",
+    "dark": true
+  },
+  {
+    "id": "graphite",
+    "name": "Graphite Pro",
+    "bg": "#1F2937",
+    "glass": "#374151",
+    "text": "#F3F4F6",
+    "desc": "Graphite pro",
+    "dark": true
+  },
+  {
+    "id": "paper",
+    "name": "Paper Light",
+    "bg": "#FFFEF7",
+    "glass": "#F5F5DC",
+    "text": "#2D2D2D",
+    "desc": "Papier lumière",
+    "dark": false
+  },
+  {
+    "id": "emerald_city",
+    "name": "Emerald City",
+    "bg": "#022C22",
+    "glass": "#10B98133",
+    "text": "#6EE7B7",
+    "desc": "Ville émeraude",
+    "dark": true
+  },
+  {
+    "id": "sunset_boulevard",
+    "name": "Sunset Boulevard",
+    "bg": "#2A0A0A",
+    "glass": "#FF450033",
+    "text": "#FFB088",
+    "desc": "Boulevard couché soleil",
+    "dark": true
+  },
+  {
+    "id": "nordic",
+    "name": "Nordic Frost",
+    "bg": "#ECEFF4",
+    "glass": "#D8DEE9",
+    "text": "#2E3440",
+    "desc": "Frost nordique",
+    "dark": false
+  },
+  {
+    "id": "obsidian",
+    "name": "Obsidian Glass",
+    "bg": "#0B0B0C",
+    "glass": "#FFFFFF1A",
+    "text": "#E5E5E5",
+    "desc": "Verre obsidienne",
+    "dark": true
+  },
+  {
+    "id": "clay",
+    "name": "Clay Terracotta",
+    "bg": "#2C1810",
+    "glass": "#C65D0733",
+    "text": "#FFDBC0",
+    "desc": "Argile terracotta",
+    "dark": true
+  },
+  {
+    "id": "mint_fresh",
+    "name": "Mint Fresh",
+    "bg": "#F0FDF4",
+    "glass": "#BBF7D033",
+    "text": "#14532D",
+    "desc": "Menthe fraîche",
+    "dark": false
+  },
+  {
+    "id": "royal_navy",
+    "name": "Royal Navy",
+    "bg": "#0A1628",
+    "glass": "#1E3A5F",
+    "text": "#93C5FD",
+    "desc": "Bleu marine royal",
+    "dark": true
+  },
+  {
+    "id": "peach_fuzz",
+    "name": "Peach Fuzz",
+    "bg": "#FFF7ED",
+    "glass": "#FDBA7433",
+    "text": "#9C4221",
+    "desc": "Pêche douce",
+    "dark": false
+  },
+  {
+    "id": "charcoal",
+    "name": "Charcoal Smoke",
+    "bg": "#18181B",
+    "glass": "#27272A",
+    "text": "#FAFAFA",
+    "desc": "Fumée charbon",
+    "dark": true
+  },
+  {
+    "id": "sakura",
+    "name": "Sakura Pink",
+    "bg": "#FFF1F2",
+    "glass": "#FECDD333",
+    "text": "#881337",
+    "desc": "Fleur cerisier",
+    "dark": false
+  },
+  {
+    "id": "deep_sea",
+    "name": "Deep Sea Teal",
+    "bg": "#042F2E",
+    "glass": "#14B8A633",
+    "text": "#99F6E0",
+    "desc": "Sarcelle profonde",
+    "dark": true
+  },
+  {
+    "id": "volcanic",
+    "name": "Volcanic Ash",
+    "bg": "#1C1917",
+    "glass": "#44403C",
+    "text": "#E7E5E4",
+    "desc": "Cendre volcanique",
+    "dark": true
+  },
+  {
+    "id": "honey",
+    "name": "Honey Comb",
+    "bg": "#FEF3C7",
+    "glass": "#F59E0B33",
+    "text": "#78350F",
+    "desc": "Nid abeille",
+    "dark": false
+  },
+  {
+    "id": "galaxy",
+    "name": "Galaxy Purple",
+    "bg": "#0F0A1E",
+    "glass": "#7C3AED33",
+    "text": "#DDD6FE",
+    "desc": "Galaxie violette",
+    "dark": true
+  },
+  {
+    "id": "linen",
+    "name": "Linen Natural",
+    "bg": "#FDF6E3",
+    "glass": "#EEE8D5",
+    "text": "#586E75",
+    "desc": "Lin naturel",
+    "dark": false
+  },
+  {
+    "id": "slate",
+    "name": "Slate Blue",
+    "bg": "#1E293B",
+    "glass": "#334155",
+    "text": "#CBD5E1",
+    "desc": "Ardoise bleue",
+    "dark": true
+  },
+  {
+    "id": "copper",
+    "name": "Copper Glow",
+    "bg": "#1A0E05",
+    "glass": "#B4530933",
+    "text": "#FED7AA",
+    "desc": "Lueur cuivre",
+    "dark": true
+  },
+  {
+    "id": "sage",
+    "name": "Sage Green",
+    "bg": "#F1F5F1",
+    "glass": "#87A96B33",
+    "text": "#3F4F3A",
+    "desc": "Sauge verte",
+    "dark": false
+  },
+  {
+    "id": "ruby",
+    "name": "Ruby Dark",
+    "bg": "#1F0A0A",
+    "glass": "#991B1B33",
+    "text": "#FCA5A5",
+    "desc": "Rubis sombre",
+    "dark": true
+  },
+  {
+    "id": "cloud",
+    "name": "Cloud Gray",
+    "bg": "#F8FAFC",
+    "glass": "#E2E8F0",
+    "text": "#1E293B",
+    "desc": "Nuage gris",
+    "dark": false
+  },
+  {
+    "id": "jade",
+    "name": "Jade Imperial",
+    "bg": "#042F2E",
+    "glass": "#065F4633",
+    "text": "#6EE7B7",
+    "desc": "Jade impérial",
+    "dark": true
+  },
+  {
+    "id": "amber",
+    "name": "Amber Dusk",
+    "bg": "#1A1207",
+    "glass": "#D9770633",
+    "text": "#FDE68A",
+    "desc": "Crépuscule ambre",
+    "dark": true
+  },
+  {
+    "id": "pearl",
+    "name": "Pearl White",
+    "bg": "#FFFFFF",
+    "glass": "#F9FAFB",
+    "text": "#111827",
+    "desc": "Blanc perle",
+    "dark": false
+  },
+  {
+    "id": "onyx",
+    "name": "Onyx Black",
+    "bg": "#09090B",
+    "glass": "#18181B",
+    "text": "#E4E4E7",
+    "desc": "Onyx noir",
+    "dark": true
+  },
+  {
+    "id": "coral",
+    "name": "Coral Reef",
+    "bg": "#2A0F0F",
+    "glass": "#FF6B6B33",
+    "text": "#FECACA",
+    "desc": "Récif corail",
+    "dark": true
+  },
+  {
+    "id": "olive",
+    "name": "Olive Grove",
+    "bg": "#1A1F0A",
+    "glass": "#65A30D33",
+    "text": "#D9F99D",
+    "desc": "Bosquet olivier",
+    "dark": true
+  },
+  {
+    "id": "storm",
+    "name": "Storm Gray",
+    "bg": "#374151",
+    "glass": "#4B5563",
+    "text": "#D1D5DB",
+    "desc": "Orage gris",
+    "dark": true
+  },
+  {
+    "id": "vanilla",
+    "name": "Vanilla Cream",
+    "bg": "#FFFBEB",
+    "glass": "#FEF3C7",
+    "text": "#92400E",
+    "desc": "Crème vanille",
+    "dark": false
+  },
+  {
+    "id": "neon_blue",
+    "name": "Neon Blue",
+    "bg": "#000A1A",
+    "glass": "#0080FF33",
+    "text": "#7DD3FC",
+    "desc": "Bleu néon",
+    "dark": true
+  },
+  {
+    "id": "moss_rock",
+    "name": "Moss Rock",
+    "bg": "#1A2416",
+    "glass": "#4A7C3933",
+    "text": "#BBF7D0",
+    "desc": "Roche mousse",
+    "dark": true
+  },
+  {
+    "id": "rose_gold",
+    "name": "Rose Gold",
+    "bg": "#2A1414",
+    "glass": "#E8A59833",
+    "text": "#FECDD3",
+    "desc": "Or rose",
+    "dark": true
+  },
+  {
+    "id": "winter",
+    "name": "Winter Sky",
+    "bg": "#F0F9FF",
+    "glass": "#BAE6FD33",
+    "text": "#0C4A6E",
+    "desc": "Ciel hiver",
+    "dark": false
+  },
+  {
+    "id": "desert",
+    "name": "Desert Night",
+    "bg": "#1C1917",
+    "glass": "#A1620733",
+    "text": "#FDE68A",
+    "desc": "Nuit désert",
+    "dark": true
+  },
+  {
+    "id": "lagoon",
+    "name": "Lagoon Blue",
+    "bg": "#0C1A1A",
+    "glass": "#0E749033",
+    "text": "#A5F3FC",
+    "desc": "Lagon bleu",
+    "dark": true
+  },
+  {
+    "id": "blush",
+    "name": "Blush Pink",
+    "bg": "#FFF0F3",
+    "glass": "#FFB3C633",
+    "text": "#9F1239",
+    "desc": "Rose blush",
+    "dark": false
+  },
+  {
+    "id": "iron",
+    "name": "Iron Steel",
+    "bg": "#252525",
+    "glass": "#52525B",
+    "text": "#E4E4E7",
+    "desc": "Acier fer",
+    "dark": true
+  },
+  {
+    "id": "tundra",
+    "name": "Tundra White",
+    "bg": "#F9FAFB",
+    "glass": "#E5E7EB",
+    "text": "#1F2937",
+    "desc": "Toundra blanche",
+    "dark": false
+  }
 ]
