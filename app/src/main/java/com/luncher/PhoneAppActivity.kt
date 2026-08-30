@@ -6,7 +6,6 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Bundle
 import android.provider.CallLog
-import android.provider.ContactsContract
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -29,10 +28,7 @@ class PhoneAppActivity : AppCompatActivity() {
             pad.visibility = if(pad.visibility==android.view.View.GONE) android.view.View.VISIBLE else android.view.View.GONE
         }
         findViewById<TextView>(R.id.btnCall).setOnClickListener { makeCall(input.text.toString()) }
-        // dial pad clicks
-        val root = findViewById<android.widget.GridLayout>(R.id.dialPad).parent as android.view.ViewGroup
-        // attach listeners via traversing
-        val grid = findViewById<android.widget.GridLayout>(R.id.dialPad).getChildAt(1) as android.widget.GridLayout
+        val grid = findViewById<android.widget.GridLayout>(R.id.dialGrid)
         for(i in 0 until grid.childCount){
             val tv = grid.getChildAt(i) as TextView
             tv.setOnClickListener { input.append(tv.text) }
@@ -73,20 +69,14 @@ class PhoneAppActivity : AppCompatActivity() {
     data class CallItem(val name:String, val number:String, val date:Long, val type:Int, val dur:Long)
     inner class CallAdapter(val items:List<CallItem>): RecyclerView.Adapter<CallAdapter.H>(){
         inner class H(v:android.view.View): RecyclerView.ViewHolder(v){
-            val t1: TextView = v.findViewById(R.id.title)
-            val t2: TextView = v.findViewById(R.id.sub)
+            val t1: TextView = v.findViewById(R.id.t1)
+            val t2: TextView = v.findViewById(R.id.t2)
         }
         override fun onCreateViewHolder(p:android.view.ViewGroup, t:Int): H {
-            val v = layoutInflater.inflate(android.R.layout.simple_list_item_2, p, false)
-            v.findViewById<TextView>(android.R.id.text1).id = R.id.title
-            v.findViewById<TextView>(android.R.id.text2).id = R.id.sub
-            // custom simple
-            val card = android.widget.LinearLayout(this@PhoneAppActivity).apply{ orientation=android.widget.LinearLayout.VERTICAL; setPadding(24,20,24,20) }
-            val a = TextView(this@PhoneAppActivity).apply{ id=R.id.title; textSize=15f; setTextColor(android.graphics.Color.BLACK) }
-            val b = TextView(this@PhoneAppActivity).apply{ id=R.id.sub; textSize=12f; setTextColor(android.graphics.Color.GRAY) }
-            card.addView(a); card.addView(b)
-            card.setOnClickListener{}
-            return H(card)
+            val ll = android.widget.LinearLayout(this@PhoneAppActivity).apply{ orientation=android.widget.LinearLayout.VERTICAL; setPadding(24,20,24,20) }
+            val a = TextView(this@PhoneAppActivity).apply{ id=R.id.t1; textSize=15f; setTextColor(android.graphics.Color.BLACK) }
+            val b = TextView(this@PhoneAppActivity).apply{ id=R.id.t2; textSize=12f; setTextColor(android.graphics.Color.GRAY) }
+            ll.addView(a); ll.addView(b); return H(ll)
         }
         override fun getItemCount()=items.size
         override fun onBindViewHolder(h:H, pos:Int){
