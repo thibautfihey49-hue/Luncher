@@ -2,17 +2,7 @@ package com.luncher.data
 import android.app.Notification
 import android.graphics.Bitmap
 import android.service.notification.StatusBarNotification
-data class NotifItem(
-    val sbnKey: String,
-    val packageName: String,
-    val appName: String,
-    val title: String,
-    val content: String,
-    val time: Long,
-    val notification: Notification,
-    val image: Bitmap? = null,
-    val isVoice: Boolean = false
-)
+data class NotifItem(val sbnKey: String, val packageName: String, val appName: String, val title: String, val content: String, val time: Long, val notification: Notification, val image: Bitmap? = null, val isVoice: Boolean = false)
 object NotificationRepository {
     val notifs = mutableListOf<NotifItem>()
     var listener: (() -> Unit)? = null
@@ -20,22 +10,13 @@ object NotificationRepository {
         try{
             val e = sbn.notification.extras
             val title = e.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: appName
-            val content = e.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-                ?: e.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
-            
-            // IMAGE DANS LA NOTIF
+            val content = e.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: e.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: ""
             var img: Bitmap? = null
             try{
-                img = e.get(Notification.EXTRA_PICTURE) as? Bitmap
-                if(img==null) img = e.get(Notification.EXTRA_LARGE_ICON) as? Bitmap
-                if(img==null) img = sbn.notification.largeIcon?.let{ 
-                    val b = android.graphics.Bitmap.createBitmap(it.width, it.height, android.graphics.Bitmap.Config.ARGB_8888)
-                    val c = android.graphics.Canvas(b); it.setBounds(0,0,c.width,c.height); it.draw(c); b
-                }
+                img = e.getParcelable(Notification.EXTRA_PICTURE) as? Bitmap
+                if(img==null) img = e.getParcelable(Notification.EXTRA_LARGE_ICON) as? Bitmap
             }catch(_:Exception){}
-
-            val isVoice = content.contains("vocal", true) || content.contains("voice", true) || content.contains("🎤") || e.getCharSequence(Notification.EXTRA_TEMPLATE) != null && content.length < 5
-
+            val isVoice = content.contains("vocal", true) || content.contains("🎤")
             notifs.removeAll{ it.sbnKey == sbn.key }
             if(content.isNotBlank()){
                 notifs.add(0, NotifItem(sbn.key, sbn.packageName, appName, title, content, System.currentTimeMillis(), sbn.notification, img, isVoice))

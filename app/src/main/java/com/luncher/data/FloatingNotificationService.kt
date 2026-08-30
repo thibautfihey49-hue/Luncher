@@ -3,6 +3,7 @@ import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.PixelFormat
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
 import android.os.Handler
@@ -31,18 +32,12 @@ class FloatingNotificationService : Service() {
         for(notif in NotificationRepository.notifs.toList()){
             val card=inf.inflate(R.layout.item_notification_float,cont,false)
             card.findViewById<TextView>(R.id.notifAppName).text="${notif.appName} • ${notif.title}"
+            try{ card.findViewById<TextView>(R.id.notifTime).text="maintenant" }catch(_:Exception){}
             card.findViewById<TextView>(R.id.notifContent).text=notif.content
-            // IMAGE
             val imgView = card.findViewById<ImageView>(R.id.notifImage)
             if(notif.image!=null){ imgView.setImageBitmap(notif.image); imgView.visibility=View.VISIBLE } else { imgView.visibility=View.GONE }
-            // VOCAL
             val voiceCont = card.findViewById<LinearLayout>(R.id.notifVoiceContainer)
-            if(notif.isVoice || notif.content.length < 8){
-                voiceCont.visibility=View.VISIBLE
-                card.findViewById<TextView>(R.id.playVoice).setOnClickListener{
-                    try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i) }catch(_:Exception){}
-                }
-            }
+            if(notif.isVoice){ voiceCont.visibility=View.VISIBLE; card.findViewById<TextView>(R.id.playVoice).setOnClickListener{ try{ val i=packageManager.getLaunchIntentForPackage(notif.packageName); i?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK); startActivity(i) }catch(_:Exception){} } } else { voiceCont.visibility=View.GONE }
             val actionsBox=card.findViewById<LinearLayout>(R.id.notifActions); actionsBox.removeAllViews()
             val replyAction = notif.notification.actions?.firstOrNull{ it.remoteInputs!=null && it.remoteInputs.isNotEmpty() }
             val replyContainer = LinearLayout(this).apply{orientation=LinearLayout.VERTICAL; setPadding(0,14,0,0)}
@@ -51,7 +46,6 @@ class FloatingNotificationService : Service() {
             val send=TextView(this).apply{text="↑"; textSize=18f; setTextColor(Color.WHITE); background=roundedBg(Color.BLACK, 60f); setPadding(28,12,28,12); gravity=Gravity.CENTER; layoutParams=LinearLayout.LayoutParams(-2,-2).apply{setMargins(6,0,0,0)}}
             row.addView(ed); row.addView(send)
             replyContainer.addView(row)
-            // Barre outils image + vocal
             val toolsRow = LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,10,0,0)}
             val btnImg = TextView(this).apply{text="📷 Image"; setTextColor(Color.parseColor("#FF444444")); background=roundedBg(Color.parseColor("#FFEEEEEE"), 18f); setPadding(16,8,16,8); textSize=12f; layoutParams=LinearLayout.LayoutParams(-2,-2).apply{setMargins(0,0,8,0)}}
             val btnVoice = TextView(this).apply{text="🎤 Vocal"; setTextColor(Color.parseColor("#FF444444")); background=roundedBg(Color.parseColor("#FFEEEEEE"), 18f); setPadding(16,8,16,8); textSize=12f}
