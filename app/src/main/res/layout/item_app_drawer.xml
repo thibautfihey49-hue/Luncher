@@ -1,18 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:orientation="vertical" android:gravity="center" android:padding="8dp">
-    <com.google.android.material.card.MaterialCardView
-        android:layout_width="64dp" android:layout_height="64dp"
-        app:cardCornerRadius="18dp" app:cardElevation="0dp"
-        app:strokeColor="#EFEFEF" app:strokeWidth="1dp"
-        app:cardBackgroundColor="#FFFFFF">
-        <ImageView android:id="@+id/appIcon" android:layout_width="56dp" android:layout_height="56dp"
-            android:layout_gravity="center" android:scaleType="centerCrop"/>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="8dp">
+    <com.google.android.material.card.MaterialCardView android:layout_width="64dp" android:layout_height="64dp" app:cardCornerRadius="20dp" app:cardElevation="0dp" app:strokeColor="#E5E7EB" app:strokeWidth="1dp" app:cardBackgroundColor="#FFFFFF">
+        <ImageView android:id="@+id/appIcon" android:layout_width="56dp" android:layout_height="56dp" android:layout_gravity="center" android:scaleType="centerCrop"/>
     </com.google.android.material.card.MaterialCardView>
-    <TextView android:id="@+id/appName" android:layout_width="72dp" android:layout_height="wrap_content"
-        android:textSize="11sp" android:textColor="#111111" android:fontFamily="sans-serif-medium"
-        android:maxLines="2" android:ellipsize="end" android:gravity="center"
-        android:layout_marginTop="6dp" android:text="App"/>
+    <TextView android:id="@+id/appName" android:layout_width="72dp" android:layout_height="wrap_content" android:textSize="11sp" android:textColor="#111827" android:fontFamily="sans-serif" android:textStyle="normal" android:maxLines="2" android:ellipsize="end" android:gravity="center" android:layout_marginTop="6dp" android:text="App"/>
 </LinearLayout>

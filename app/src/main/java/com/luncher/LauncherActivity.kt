@@ -44,11 +44,18 @@ class LauncherActivity : AppCompatActivity() {
     override fun onResume(){ super.onResume(); loadApps() }
     private fun loadApps(){
         val pm = packageManager
+        // Methode ultra compatible Android 11+
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply{ addCategory(Intent.CATEGORY_LAUNCHER) }
-        val apps = pm.queryIntentActivities(mainIntent, 0).map{
-            AppInfo(it.loadLabel(pm).toString(), it.activityInfo.packageName, it.activityInfo.name, it.loadIcon(pm))
-        }.sortedBy{ it.label.lowercase() }.filterNot{ it.packageName==packageName }
-        allApps = apps
+        val list = pm.queryIntentActivities(mainIntent, 0)
+        // Fallback getInstalledApplications si query vide
+        val apps = if(list.isNotEmpty()){
+            list.map{ AppInfo(it.loadLabel(pm).toString(), it.activityInfo.packageName, it.activityInfo.name, it.loadIcon(pm)) }
+        }else{
+            pm.getInstalledApplications(0).filter{ pm.getLaunchIntentForPackage(it.packageName)!=null }.map{
+                AppInfo(pm.getApplicationLabel(it).toString(), it.packageName, "", pm.getApplicationIcon(it))
+            }
+        }
+        allApps = apps.sortedBy{ it.label.lowercase() }.filterNot{ it.packageName==packageName }
         appAdapter.update(allApps)
     }
     private fun filter(q:String){
