@@ -14,12 +14,12 @@ object NotificationRepository {
             val bigText = extras.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
             val text = extras.getCharSequence(Notification.EXTRA_TEXT)?.toString()
             val summary = extras.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString()
-            val content = bigText?.takeIf { it.isNotBlank() } ?: text?.takeIf { it.isNotBlank() } ?: summary ?: ""
-            notifs.removeAll { it.sbnKey == sbn.key }
-            notifs.add(0, NotifItem(sbn.key, sbn.packageName, appName, title, content, System.currentTimeMillis(), n))
-            if (notifs.size > 20) notifs.removeAt(notifs.size - 1)
+            val content = bigText?.takeIf{it.isNotBlank()} ?: text?.takeIf{it.isNotBlank()} ?: summary ?: ""
+            notifs.removeAll{it.sbnKey==sbn.key}
+            notifs.add(0,NotifItem(sbn.key,sbn.packageName,appName,title,content,System.currentTimeMillis(),n))
+            if(notifs.size>20) notifs.removeAt(notifs.size-1)
             listener?.invoke()
-        } catch (_: Exception) {}
+        } catch (_:Exception){}
     }
-    fun remove(key: String) { notifs.removeAll { it.sbnKey == key }; listener?.invoke() }
+    fun remove(key: String){ notifs.removeAll{it.sbnKey==key}; listener?.invoke() }
 }
