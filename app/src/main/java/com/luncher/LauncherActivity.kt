@@ -38,6 +38,7 @@ class LauncherActivity : AppCompatActivity() {
     private lateinit var drawerContainer: View
     private lateinit var appRecycler: RecyclerView
     private lateinit var searchBar: EditText
+    private lateinit var clearSearch: TextView
     private lateinit var drawerHandle: View
     private lateinit var drawerSearchHandle: View
     private lateinit var permissionOverlay: View
@@ -73,6 +74,8 @@ class LauncherActivity : AppCompatActivity() {
         drawerContainer = findViewById(R.id.drawerContainer)
         appRecycler = findViewById(R.id.appRecycler)
         searchBar = findViewById(R.id.searchBar)
+        clearSearch = findViewById(R.id.clearSearch)
+        clearSearch.setOnClickListener { searchBar.text.clear() }
         drawerHandle = findViewById(R.id.drawerHandle)
         drawerSearchHandle = findViewById(R.id.drawerSearchHandle)
         permissionOverlay = findViewById(R.id.permissionOverlay)
@@ -305,6 +308,7 @@ class LauncherActivity : AppCompatActivity() {
             if (this::adapter.isInitialized) {
                 adapter.updateList(apps)
                 val q = searchBar.text?.toString() ?: ""
+                clearSearch.visibility = if(q.isNotEmpty()) View.VISIBLE else View.GONE
                 if (q.isNotBlank()) adapter.filter(q)
             }
         } catch (_: Exception) {}
