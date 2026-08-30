@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:background="#FFFFFF" android:padding="10dp">
-    <com.google.android.material.card.MaterialCardView android:layout_width="68dp" android:layout_height="68dp" app:cardCornerRadius="20dp" app:cardElevation="0dp" app:strokeColor="#EFEFEF" app:strokeWidth="1dp" app:cardBackgroundColor="#FFFFFF">
+    <com.google.android.material.card.MaterialCardView android:layout_width="68dp" android:layout_height="68dp" app:cardCornerRadius="20dp" app:cardElevation="0dp" app:strokeColor="#F0F0F0" app:strokeWidth="1dp" app:cardBackgroundColor="#FFFFFF">
         <ImageView android:id="@+id/appIcon" android:layout_width="46dp" android:layout_height="46dp" android:layout_gravity="center" android:scaleType="centerCrop"/>
     </com.google.android.material.card.MaterialCardView>
-    <TextView android:id="@+id/appName" android:layout_width="76dp" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="App" android:textSize="12sp" android:textColor="#1A1A1A" android:fontFamily="sans-serif-medium" android:gravity="center" android:maxLines="2" android:ellipsize="end"/>
+    <TextView android:id="@+id/appName" android:layout_width="76dp" android:layout_height="wrap_content" android:layout_marginTop="10dp" android:text="App" android:textSize="11.5sp" android:textColor="#111827" android:fontFamily="sans-serif-medium" android:gravity="center" android:maxLines="2" android:ellipsize="end"/>
 </LinearLayout>
