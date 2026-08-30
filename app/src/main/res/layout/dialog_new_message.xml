@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp" android:background="#FFFFFF">
-    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nouveau message" android:textSize="18sp" android:textColor="#111827" android:fontFamily="sans-serif" android:textStyle="normal" android:textStyle="bold" android:layout_marginBottom="12dp"/>
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="Nouveau message" android:textSize="18sp" android:textColor="#111827" android:fontFamily="sans-serif" android:textStyle="bold" android:layout_marginBottom="12dp"/>
     <com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="48dp" app:cardCornerRadius="24dp" app:cardBackgroundColor="#F3F4F6" app:cardElevation="0dp">
         <LinearLayout android:layout_width="match_parent" android:layout_height="match_parent" android:gravity="center_vertical" android:paddingHorizontal="16dp">
             <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="⌕" android:textColor="#6B7280"/>
