@@ -37,8 +37,6 @@ class FloatingNotificationService : Service() {
             card.findViewById<TextView>(R.id.notifContent).text=notif.content
             val actionsBox=card.findViewById<LinearLayout>(R.id.notifActions); actionsBox.removeAllViews()
             val replyAction = notif.notification.actions?.firstOrNull{ it.remoteInputs!=null && it.remoteInputs.isNotEmpty() }
-            
-            // Champ réponse design
             val replyContainer = LinearLayout(this).apply{orientation=LinearLayout.VERTICAL; setPadding(0,14,0,0)}
             val row=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; background=roundedBg(Color.parseColor("#FFF2F2F2"), 32f); setPadding(6,6,6,6)}
             val ed=EditText(this).apply{hint="Répondre..."; setHintTextColor(Color.parseColor("#FF999999")); setTextColor(Color.BLACK); background=null; setPadding(18,12,18,12); layoutParams=LinearLayout.LayoutParams(0,-2,1f); maxLines=4; textSize=15f}
@@ -70,10 +68,9 @@ class FloatingNotificationService : Service() {
                         refreshAggressive()
                     }, 700)
                 }else{
-                    Toast.makeText(this,"Réponse impossible sur ce mail à soi-même",0).show()
+                    Toast.makeText(this,"Réponse impossible (mail à soi-même)",0).show()
                 }
             }
-            // Boutons secondaires plus discrets
             val secondaryRow=LinearLayout(this).apply{orientation=LinearLayout.HORIZONTAL; setPadding(0,12,0,0)}
             fun miniBtn(t:String, col:Int, cl:()->Unit): TextView {
                 return TextView(this).apply{text=t; setTextColor(col); textSize=13f; typeface=android.graphics.Typeface.DEFAULT_BOLD; background=roundedBg(Color.parseColor("#FFEFEFEF"), 20f); setPadding(20,10,20,10); layoutParams=LinearLayout.LayoutParams(-2,-2).apply{setMargins(0,0,10,0)}; setOnClickListener{cl()}}

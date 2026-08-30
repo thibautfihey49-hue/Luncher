@@ -9,9 +9,7 @@ object NotificationRepository {
         try{
             val e = sbn.notification.extras
             val title = e.getCharSequence(Notification.EXTRA_TITLE)?.toString() ?: appName
-            val content = e.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString()
-                ?: e.getCharSequence(Notification.EXTRA_TEXT)?.toString()
-                ?: e.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString() ?: ""
+            val content = e.getCharSequence(Notification.EXTRA_BIG_TEXT)?.toString() ?: e.getCharSequence(Notification.EXTRA_TEXT)?.toString() ?: e.getCharSequence(Notification.EXTRA_SUMMARY_TEXT)?.toString() ?: ""
             notifs.removeAll{ it.sbnKey == sbn.key }
             notifs.add(0, NotifItem(sbn.key, sbn.packageName, appName, title, content, System.currentTimeMillis(), sbn.notification))
             if(notifs.size > 20) notifs.removeAt(notifs.size-1)
