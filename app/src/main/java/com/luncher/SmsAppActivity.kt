@@ -3,10 +3,12 @@ import android.Manifest
 import android.content.ContentValues
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.database.Cursor
 import android.media.MediaPlayer
 import android.media.MediaRecorder
 import android.net.Uri
 import android.os.Bundle
+import android.provider.ContactsContract
 import android.provider.MediaStore
 import android.provider.Telephony
 import android.view.View
@@ -18,6 +20,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 class SmsAppActivity : AppCompatActivity() {
     private lateinit var recyclerConv: RecyclerView
     private lateinit var recyclerMsg: RecyclerView
@@ -29,6 +32,8 @@ class SmsAppActivity : AppCompatActivity() {
     private var pendingImageUri: Uri? = null
     private val PICK_IMAGE = 1001
     private val messages = mutableListOf<Msg>()
+    private val contactsList = mutableListOf<Contact>()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sms)
@@ -38,30 +43,110 @@ class SmsAppActivity : AppCompatActivity() {
         recyclerMsg.layoutManager = LinearLayoutManager(this).apply{ stackFromEnd=true }
         findViewById<View>(R.id.back).setOnClickListener { finish() }
         findViewById<View>(R.id.backChat).setOnClickListener { showList() }
-        findViewById<View>(R.id.btnNew).setOnClickListener {
-            val input = EditText(this).apply{ hint="Numéro ex: 06..." }
-            android.app.AlertDialog.Builder(this).setTitle("Nouveau message").setView(input).setPositiveButton("Ouvrir"){_,_-> val n=input.text.toString().trim(); if(n.isNotBlank()) showChat(n) }.show()
-        }
+        findViewById<View>(R.id.btnNew).setOnClickListener { showNewMessageDialog() }
         findViewById<View>(R.id.btnImage).setOnClickListener { pickImage() }
         findViewById<View>(R.id.btnSend).setOnClickListener { sendSms() }
         findViewById<View>(R.id.btnVoice).setOnClickListener { toggleVoice() }
         checkPerms()
     }
+
     private fun checkPerms(){
         val perms = arrayOf(Manifest.permission.READ_SMS, Manifest.permission.SEND_SMS, Manifest.permission.READ_CONTACTS, Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_MEDIA_IMAGES)
-        if(perms.any{ ActivityCompat.checkSelfPermission(this,it)!=PackageManager.PERMISSION_GRANTED }) ActivityCompat.requestPermissions(this, perms, 200) else loadConversations()
+        if(perms.any{ ActivityCompat.checkSelfPermission(this,it)!=PackageManager.PERMISSION_GRANTED }) ActivityCompat.requestPermissions(this, perms, 200) else { loadConversations(); loadContacts() }
     }
-    override fun onRequestPermissionsResult(c:Int, p:Array<out String>, r:IntArray){ super.onRequestPermissionsResult(c,p,r); loadConversations() }
+    override fun onRequestPermissionsResult(c:Int, p:Array<out String>, r:IntArray){ super.onRequestPermissionsResult(c,p,r); loadConversations(); loadContacts() }
+
+    // CONTACTS
+    private fun loadContacts(){
+        contactsList.clear()
+        try{
+            val cur: Cursor? = contentResolver.query(ContactsContract.CommonDataKinds.Phone.CONTENT_URI, arrayOf(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME, ContactsContract.CommonDataKinds.Phone.NUMBER), null, null, ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME+" ASC")
+            cur?.use{
+                val nameIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
+                val numIdx = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
+                while(it.moveToNext() && contactsList.size<500){
+                    val n = it.getString(nameIdx)?: continue
+                    val num = it.getString(numIdx)?: continue
+                    if(contactsList.none{ c-> c.number==num }) contactsList.add(Contact(n,num))
+                }
+            }
+        }catch(e:Exception){}
+    }
+
+    private fun showNewMessageDialog(){
+        val dialogView = layoutInflater.inflate(R.layout.dialog_new_message, null)
+        val search = dialogView.findViewById<EditText>(R.id.searchContact)
+        val recycler = dialogView.findViewById<RecyclerView>(R.id.recyclerContacts)
+        recycler.layoutManager = LinearLayoutManager(this)
+        var filtered = contactsList.toList()
+        val adapter = ContactPickerAdapter(filtered) { contact ->
+            showChat(contact.number)
+            (dialogView.parent as? android.view.ViewGroup)?.let{ (it.parent as? android.app.AlertDialog)?.dismiss() }
+        }
+        // Custom simple adapter for dialog
+        recycler.adapter = object: RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+            var items = filtered
+            override fun onCreateViewHolder(p: android.view.ViewGroup, t: Int): RecyclerView.ViewHolder {
+                val v = layoutInflater.inflate(R.layout.item_contact_pick, p, false); return object: RecyclerView.ViewHolder(v){}
+            }
+            override fun getItemCount()=items.size
+            override fun onBindViewHolder(h: RecyclerView.ViewHolder, pos: Int){
+                val c = items[pos]
+                h.itemView.findViewById<TextView>(R.id.name).text = c.name
+                h.itemView.findViewById<TextView>(R.id.number).text = c.number
+                h.itemView.setOnClickListener{
+                    showChat(c.number)
+                    try{ (dialogView.tag as? android.app.AlertDialog)?.dismiss() }catch(_:Exception){}
+                }
+            }
+            fun filter(q:String){
+                items = if(q.isBlank()) contactsList else contactsList.filter{ it.name.contains(q,true) || it.number.contains(q,true) }
+                notifyDataSetChanged()
+            }
+        }
+
+        search.addTextChangedListener(object: android.text.TextWatcher{
+            override fun beforeTextChanged(s: CharSequence?, a: Int, b: Int, c: Int){}
+            override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int){}
+            override fun afterTextChanged(s: android.text.Editable?){
+                (recycler.adapter as? RecyclerView.Adapter<*>).let{
+                    // hack call filter via reflection not needed, recreate
+                    val q = s.toString()
+                    val newItems = if(q.isBlank()) contactsList else contactsList.filter{ it.name.contains(q,true) || it.number.contains(q,true) }
+                    recycler.adapter = object: RecyclerView.Adapter<RecyclerView.ViewHolder>(){
+                        var items = newItems
+                        override fun onCreateViewHolder(p: android.view.ViewGroup, t: Int): RecyclerView.ViewHolder {
+                            val v = layoutInflater.inflate(R.layout.item_contact_pick, p, false); return object: RecyclerView.ViewHolder(v){}
+                        }
+                        override fun getItemCount()=items.size
+                        override fun onBindViewHolder(h: RecyclerView.ViewHolder, pos: Int){
+                            val c = items[pos]
+                            h.itemView.findViewById<TextView>(R.id.name).text = c.name
+                            h.itemView.findViewById<TextView>(R.id.number).text = c.number
+                            h.itemView.setOnClickListener{ showChat(c.number); try{ (dialogView.tag as android.app.AlertDialog).dismiss() }catch(_:Exception){} }
+                        }
+                    }
+                }
+            }
+        })
+
+        val manual = dialogView.findViewById<EditText>(R.id.manualNumber)
+        dialogView.findViewById<View>(R.id.btnOpenManual).setOnClickListener{
+            val n = manual.text.toString().trim()
+            if(n.isNotBlank()){ showChat(n); try{ (dialogView.tag as android.app.AlertDialog).dismiss() }catch(_:Exception){} }
+        }
+
+        val alert = android.app.AlertDialog.Builder(this).setView(dialogView).create()
+        dialogView.tag = alert
+        alert.show()
+    }
+
     private fun loadConversations(){
         val map = linkedMapOf<String, Conv>()
         try{
             val cur = contentResolver.query(Telephony.Sms.CONTENT_URI, null, null, null, Telephony.Sms.DATE+" DESC")
             cur?.use{ while(it.moveToNext()){ val addr=it.getString(it.getColumnIndexOrThrow(Telephony.Sms.ADDRESS))?: continue; val body=it.getString(it.getColumnIndexOrThrow(Telephony.Sms.BODY))?:""; val date=it.getLong(it.getColumnIndexOrThrow(Telephony.Sms.DATE)); if(!map.containsKey(addr)) map[addr]=Conv(addr,body,date) } }
-        }catch(e:Exception){ Toast.makeText(this,"Autorise SMS dans paramètres",1).show() }
-        if(map.isEmpty()){
-            // Demo si pas de sms
-            map["Exemple"] = Conv("+33600000000","Salut! Bienvenue dans Luncher SMS", System.currentTimeMillis())
-        }
+        }catch(e:Exception){}
         recyclerConv.adapter = ConvAdapter(map.values.toList())
         recyclerConv.visibility = View.VISIBLE
         findViewById<View>(R.id.chatArea).visibility = View.GONE
@@ -85,15 +170,15 @@ class SmsAppActivity : AppCompatActivity() {
         try{
             if(pendingImageUri!=null){ messages.add(Msg(txt, pendingImageUri.toString(), null, true, System.currentTimeMillis())); recyclerMsg.adapter?.notifyItemInserted(messages.size-1); recyclerMsg.scrollToPosition(messages.size-1) }
             else{
-                val sms=android.telephony.SmsManager.getDefault(); sms.sendTextMessage(num,null,txt,null,null)
+                android.telephony.SmsManager.getDefault().sendTextMessage(num,null,txt,null,null)
                 val values=ContentValues().apply{ put(Telephony.Sms.ADDRESS,num); put(Telephony.Sms.BODY,txt); put(Telephony.Sms.DATE,System.currentTimeMillis()); put(Telephony.Sms.TYPE,Telephony.Sms.MESSAGE_TYPE_SENT) }
                 contentResolver.insert(Telephony.Sms.CONTENT_URI, values); messages.add(Msg(txt,null,null,true,System.currentTimeMillis())); recyclerMsg.adapter?.notifyItemInserted(messages.size-1); recyclerMsg.scrollToPosition(messages.size-1)
             }
-            input.text.clear(); pendingImageUri=null; findViewById<TextView>(R.id.btnImage).text="📷"; Toast.makeText(this,"✓ Envoyé",0).show()
-        }catch(e:Exception){ Toast.makeText(this,"Échec: ${e.message}",0).show() }
+            input.text.clear(); pendingImageUri=null; findViewById<TextView>(R.id.btnImage).text="📷"
+        }catch(e:Exception){ Toast.makeText(this,"Échec",0).show() }
     }
     private fun pickImage(){ startActivityForResult(Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI), PICK_IMAGE) }
-    override fun onActivityResult(rc:Int, res:Int, data:Intent?){ super.onActivityResult(rc,res,data); if(rc==PICK_IMAGE && res==RESULT_OK && data!=null){ val uri=data.data; if(uri!=null){ pendingImageUri=uri; findViewById<TextView>(R.id.btnImage).text="✅📷"; messages.add(Msg("",uri.toString(),null,true,System.currentTimeMillis())); recyclerMsg.adapter?.notifyItemInserted(messages.size-1); recyclerMsg.scrollToPosition(messages.size-1) } } }
+    override fun onActivityResult(rc:Int, res:Int, data:Intent?){ super.onActivityResult(rc,res,data); if(rc==PICK_IMAGE && res==RESULT_OK && data!=null){ data.data?.let{ pendingImageUri=it; findViewById<TextView>(R.id.btnImage).text="✅"; messages.add(Msg("",it.toString(),null,true,System.currentTimeMillis())); recyclerMsg.adapter?.notifyItemInserted(messages.size-1); recyclerMsg.scrollToPosition(messages.size-1) } } }
     private fun toggleVoice(){ if(isRecording) stopRecording() else startRecording() }
     private fun startRecording(){
         if(ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO)!=PackageManager.PERMISSION_GRANTED){ ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.RECORD_AUDIO),201); return }
@@ -101,8 +186,11 @@ class SmsAppActivity : AppCompatActivity() {
     }
     private fun stopRecording(){ try{ recorder?.stop(); recorder?.release(); recorder=null; isRecording=false; findViewById<TextView>(R.id.voiceStatus).visibility=View.GONE; findViewById<TextView>(R.id.btnVoice).text="🎤"; audioFile?.let{ messages.add(Msg("",null,it,true,System.currentTimeMillis())); recyclerMsg.adapter?.notifyItemInserted(messages.size-1); recyclerMsg.scrollToPosition(messages.size-1) } }catch(e:Exception){} }
     private fun playAudio(path:String, btn:TextView){ try{ mediaPlayer?.release(); mediaPlayer=MediaPlayer().apply{ setDataSource(path); prepare(); start(); setOnCompletionListener{ btn.text="▶️" } }; btn.text="⏸️" }catch(e:Exception){} }
+
     data class Conv(val number:String, val last:String, val date:Long)
     data class Msg(val body:String, val imageUri:String?, val audioPath:String?, val sent:Boolean, val date:Long)
+    data class Contact(val name:String, val number:String)
+
     inner class ConvAdapter(val items:List<Conv>): RecyclerView.Adapter<ConvAdapter.H>(){
         inner class H(v:View): RecyclerView.ViewHolder(v){ val t1:TextView=v.findViewById(R.id.title); val t2:TextView=v.findViewById(R.id.sub) }
         override fun onCreateViewHolder(p:android.view.ViewGroup, t:Int): H { return H(layoutInflater.inflate(R.layout.item_sms_conv, p, false)) }
@@ -121,10 +209,16 @@ class SmsAppActivity : AppCompatActivity() {
         override fun getItemCount()=items.size
         override fun onBindViewHolder(h:RecyclerView.ViewHolder, pos:Int){
             val m=items[pos]; val v=h.itemView
-            when{ m.imageUri!=null->{ try{ v.findViewById<ImageView>(R.id.img).setImageURI(Uri.parse(m.imageUri)) }catch(_:Exception){}; v.findViewById<TextView>(R.id.txt)?.text=m.body }
+            when{ m.imageUri!=null->{ try{ v.findViewById<ImageView>(R.id.img).setImageURI(Uri.parse(m.imageUri)) }catch(_:Exception){} }
                 m.audioPath!=null->{ val b=v.findViewById<TextView>(R.id.play); b.setOnClickListener{ playAudio(m.audioPath!!, b) } }
                 else->{ val tv=v.findViewById<TextView>(R.id.txt); tv.text=m.body; tv.setBackgroundColor(if(m.sent) android.graphics.Color.BLACK else android.graphics.Color.WHITE); tv.setTextColor(if(m.sent) android.graphics.Color.WHITE else android.graphics.Color.BLACK) }
             }
         }
+    }
+    inner class ContactPickerAdapter(val items:List<Contact>, val onPick:(Contact)->Unit): RecyclerView.Adapter<ContactPickerAdapter.H>(){
+        inner class H(v:View): RecyclerView.ViewHolder(v){ val n:TextView=v.findViewById(R.id.name); val num:TextView=v.findViewById(R.id.number) }
+        override fun onCreateViewHolder(p:android.view.ViewGroup, t:Int): H { return H(layoutInflater.inflate(R.layout.item_contact_pick, p, false)) }
+        override fun getItemCount()=items.size
+        override fun onBindViewHolder(h:H, pos:Int){ val c=items[pos]; h.n.text=c.name; h.num.text=c.number; h.itemView.setOnClickListener{ onPick(c) } }
     }
 }
