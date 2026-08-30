@@ -1,1 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?><LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="8dp"><ImageView android:id="@+id/appIcon" android:layout_width="56dp" android:layout_height="56dp" /><TextView android:id="@+id/appName" android:layout_width="match_parent" android:layout_height="wrap_content" android:maxLines="2" android:gravity="center" android:textColor="#FFFFFF" android:textSize="12sp" android:layout_marginTop="6dp" /></LinearLayout>
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:gravity="center" android:padding="8dp">
+    <ImageView android:id="@+id/appIcon" android:layout_width="56dp" android:layout_height="56dp"/>
+    <TextView android:id="@+id/appLabel" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:maxLines="1" android:ellipsize="end" android:textSize="11sp" android:textColor="#0F172A"/>
+</LinearLayout>
