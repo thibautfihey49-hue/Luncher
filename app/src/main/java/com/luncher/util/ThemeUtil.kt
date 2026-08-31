@@ -1,12 +1,18 @@
 package com.luncher.util
 import android.content.Context
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+data class UltraTheme(val id:String,val name:String,val desc:String,val bgType:Int,val bgColors:List<String>,val bgOrientation:GradientDrawable.Orientation=GradientDrawable.Orientation.TL_BR,val textColor:String,val secondaryText:String,val accent:String,val accent2:String,val searchShape:Int,val searchBg:String,val searchTextColor:String,val listStyle:Int,val listCorner:Float,val listSpacing:Int,val fontFamily:Int,val fontSize:Float,val fontBold:Boolean,val bottomStyle:Int,val wrenchIcon:String,val bottomIcons:List<String>,val statusBarLight:Boolean)
 object ThemeUtil{
     const val PREFS="luncher"
-    fun getBg(c:Context):Int = try{ Color.parseColor(c.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("bg","#F5F5F7")!!)}catch(_:Exception){ Color.parseColor("#F5F5F7")}
-    fun isDark(bg:Int):Boolean = (1-(0.299*Color.red(bg)+0.587*Color.green(bg)+0.114*Color.blue(bg))/255) >= 0.5
-    fun getTextColor(bg:Int):Int = if(isDark(bg)) Color.WHITE else Color.parseColor("#1A1A1A")
-    fun getHintColor(bg:Int):Int = if(isDark(bg)) Color.parseColor("#AAAAAA") else Color.parseColor("#888888")
-    fun saveBg(c:Context, col:String){ c.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString("bg",col).apply()}
-    fun log(c:Context, msg:String){ try{ java.io.File(c.filesDir,"luncher_debug.txt").appendText("$msg\n")}catch(_:Exception){} }
+    val themes=listOf(
+        UltraTheme("og","Original Luncher","Blanc clean",0,listOf("#F5F5F7"),GradientDrawable.Orientation.TOP_BOTTOM,"#1A1A1A","#888888","#6A5ACD","#8A7CFF",0,"#FFFFFF","#000000",0,60f,0,0,18f,false,0,"🔧",listOf("📞","💬","📁"),true),
+        UltraTheme("amoled","AMOLED", "Noir OLED",0,listOf("#000000"),GradientDrawable.Orientation.TOP_BOTTOM,"#FFFFFF","#888","#FFFFFF","#333",0,"#111111","#FFFFFF",0,60f,0,0,18f,false,0,"⚙️",listOf("📞","💬","📁"),false),
+        UltraTheme("midnight","Midnight Gradient","Dégradé nuit",1,listOf("#0F0C29","#302B63"),GradientDrawable.Orientation.TL_BR,"#FFFFFF","#A0A0C0","#00DBDE","#FC00FF",0,"#1A1A3A","#FFFFFF",0,60f,0,0,18f,false,0,"🌙",listOf("📞","💬","📁"),false)
+    )
+    fun get(c:Context):UltraTheme{ val id=c.getSharedPreferences(PREFS,Context.MODE_PRIVATE).getString("theme_id","og")!!; return themes.find{it.id==id}?:themes[0] }
+    fun save(c:Context,t:UltraTheme){ c.getSharedPreferences(PREFS,Context.MODE_PRIVATE).edit().putString("theme_id",t.id).apply() }
+    fun drawable(t:UltraTheme):GradientDrawable = if(t.bgType==0) GradientDrawable().apply{ setColor(Color.parseColor(t.bgColors[0]))} else GradientDrawable(t.bgOrientation, t.bgColors.map{Color.parseColor(it)}.toIntArray())
+    fun typeface(t:UltraTheme):Typeface = Typeface.DEFAULT
 }
