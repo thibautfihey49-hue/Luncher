@@ -1,44 +1,35 @@
 package com.thibautfihey.luncher
+
 import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.luncher.util.ThemeUtil
-import java.io.File
+
 class ThemeSettingsActivity: AppCompatActivity(){
     override fun onCreate(savedInstanceState: Bundle?){
         super.onCreate(savedInstanceState)
         val scroll=ScrollView(this)
-        val col=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; setPadding(32,70,32,32); setBackgroundColor(Color.parseColor("#121212"))}
-        col.addView(TextView(this).apply{ text="Thèmes Luncher"; setTextColor(Color.WHITE); textSize=24f; setPadding(0,0,0,10)})
-        col.addView(TextView(this).apply{ text="Le fond change instantanément"; setTextColor(Color.GRAY); setPadding(0,0,0,30)})
+        val col=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; setPadding(30,70,30,30); setBackgroundColor(Color.parseColor("#0A0A0A"))}
+        col.addView(TextView(this).apply{ text="THEMES"; setTextColor(Color.WHITE); textSize=28f; typeface=android.graphics.Typeface.DEFAULT_BOLD})
+        col.addView(TextView(this).apply{ text="Choisis un thème complet"; setTextColor(Color.GRAY); setPadding(0,10,0,30)})
 
-        val logFile=File(filesDir,"luncher_debug.txt")
-        if(logFile.exists()){
-            col.addView(TextView(this).apply{ text="LOG:\n${logFile.readText().take(1500)}"; setTextColor(Color.YELLOW); textSize=10f})
-            col.addView(Button(this).apply{ text="Effacer log"; setOnClickListener{ logFile.delete(); recreate()}})
-        }
-
-        val themes=listOf(
-            "#F5F5F7" to "Original Luncher",
-            "#FFFFFF" to "Blanc pur",
-            "#000000" to "Amoled Noir",
-            "#121212" to "Noir doux",
-            "#1A1A2E" to "Midnight",
-            "#0B3D20" to "Forest",
-            "#FFF8E1" to "Crème",
-            "#E3F2FD" to "Bleu ciel",
-            "#F3E5F5" to "Lavande",
-            "#FFEBEE" to "Rose"
-        )
-
-        themes.forEach{ (hex,name) ->
-            col.addView(Button(this).apply{
-                text=name; layoutParams=LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,160).apply{ setMargins(0,0,0,20)}
-                try{ setBackgroundColor(Color.parseColor(hex)); setTextColor(if(ThemeUtil.isDark(Color.parseColor(hex))) Color.WHITE else Color.BLACK)}catch(_:Exception){}
-                setOnClickListener{ ThemeUtil.saveBg(this@ThemeSettingsActivity,hex); ThemeUtil.log(this@ThemeSettingsActivity,"theme $name $hex"); Toast.makeText(this@ThemeSettingsActivity,"$name appliqué - retour",Toast.LENGTH_SHORT).show(); finish()}
+        ThemeUtil.themes.forEach{ t ->
+            val card=LinearLayout(this).apply{
+                orientation=LinearLayout.VERTICAL; background=ThemeUtil.drawable(t)
+                setPadding(28,28,28,28)
+                layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,28)}
+            }
+            card.addView(TextView(this).apply{ text="${t.wrenchIcon} ${t.name}"; textSize=20f; setTextColor(Color.parseColor(t.textColor)); typeface=android.graphics.Typeface.DEFAULT_BOLD})
+            card.addView(TextView(this).apply{ text=t.desc; setTextColor(Color.parseColor(t.secondaryText)); textSize=12f; setPadding(0,6,0,18)})
+            card.addView(Button(this).apply{
+                text="Appliquer"; setTextColor(Color.WHITE)
+                background=GradientDrawable().apply{ cornerRadius=20f; setColor(Color.parseColor(t.accent))}
+                setOnClickListener{ ThemeUtil.save(this@ThemeSettingsActivity,t); finish()}
             })
+            card.setOnClickListener{ ThemeUtil.save(this@ThemeSettingsActivity,t); finish()}
+            col.addView(card)
         }
         scroll.addView(col); setContentView(scroll)
     }
