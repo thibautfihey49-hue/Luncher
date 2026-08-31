@@ -16,7 +16,7 @@ data class LuncherNotif(
     val time:Long,
     val actions:List<Notification.Action>,
     val compatActions:List<NotificationCompat.Action>,
-    val statusBar: StatusBarNotification
+    val sbn: StatusBarNotification
 )
 
 object NotificationStore{
@@ -24,10 +24,11 @@ object NotificationStore{
 }
 
 class LuncherNotificationService: NotificationListenerService(){
+    init{ instance=this }
     override fun onNotificationPosted(sbn: StatusBarNotification?){
         sbn?:return
         val pkg=sbn.packageName
-        if(pkg!in listOf("com.whatsapp","com.whatsapp.w4b","com.google.android.gm","com.android.mms","com.google.android.apps.messaging","com.facebook.orca","com.instagram.android","org.telegram.messenger")) return
+        if(pkg!in listOf("com.whatsapp","com.whatsapp.w4b","com.google.android.gm","com.android.mms","com.google.android.apps.messaging","com.facebook.orca","org.telegram.messenger")) return
         val extras=sbn.notification.extras
         val title=extras.getString("android.title")?: pkg
         val text=extras.getCharSequence("android.text")?.toString()?: extras.getCharSequence("android.bigText")?.toString()?: ""
@@ -42,39 +43,35 @@ class LuncherNotificationService: NotificationListenerService(){
     override fun onNotificationRemoved(sbn: StatusBarNotification?){
         sbn?.let{ NotificationStore.notifs.removeAll{ n-> n.key==it.key } }
     }
-
     companion object{
+        var instance:LuncherNotificationService? = null
         fun sendQuickReply(notif: LuncherNotif, replyText:String){
             try{
-                // 1. Actions natives
+                val ctx = instance?.applicationContext
                 for(action in notif.actions){
                     val rInputs = action.remoteInputs
                     if(!rInputs.isNullOrEmpty()){
-                        val intent=Intent()
-                        val bundle=Bundle()
+                        val intent = Intent()
+                        val bundle = Bundle()
                         bundle.putString(rInputs[0].resultKey, replyText)
-                        val remoteInputsArray = arrayOfNulls<android.app.RemoteInput>(rInputs.size)
-                        for(i in rInputs.indices){
-                            remoteInputsArray[i] = android.app.RemoteInput.Builder(rInputs[i].resultKey).setLabel(rInputs[i].label).build()
-                        }
-                        android.app.RemoteInput.addResultsToIntent(remoteInputsArray, intent, bundle)
-                        action.actionIntent.send(this::class.java.classLoader?.let{ notif.statusBar.context }, 0, intent)
+                        val results = rInputs.map{ android.app.RemoteInput.Builder(it.resultKey).build() }.toTypedArray()
+                        android.app.RemoteInput.addResultsToIntent(results, intent, bundle)
+                        if(ctx!=null) action.actionIntent.send(ctx,0,intent) else action.actionIntent.send()
                         return
                     }
                 }
-                // 2. Compat actions (WhatsApp)
                 for(action in notif.compatActions){
                     val rInputs = action.remoteInputs
                     if(!rInputs.isNullOrEmpty()){
-                        val intent=Intent()
-                        val bundle=Bundle()
+                        val intent = Intent()
+                        val bundle = Bundle()
                         bundle.putString(rInputs[0].resultKey, replyText)
                         RemoteInput.addResultsToIntent(rInputs, intent, bundle)
-                        action.actionIntent?.send(notif.statusBar.context, 0, intent)
+                        if(ctx!=null) action.actionIntent?.send(ctx,0,intent) else action.actionIntent?.send()
                         return
                     }
                 }
-            }catch(e:Exception){ e.printStackTrace()}
+            }catch(e:Exception){ e.printStackTrace() }
         }
     }
 }
