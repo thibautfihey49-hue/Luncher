@@ -3,8 +3,8 @@ package com.luncher
 import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Bundle
 import android.content.Intent
+import android.os.Bundle
 import com.thibautfihey.luncher.ThemeSettingsActivity
 import android.provider.ContactsContract
 import android.provider.Telephony

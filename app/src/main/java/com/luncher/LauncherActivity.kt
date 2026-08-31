@@ -2,7 +2,6 @@
 package com.luncher
 import android.content.Intent
 import android.os.Bundle
-import android.content.Intent
 import com.thibautfihey.luncher.ThemeSettingsActivity
 import android.view.View
 import android.widget.EditText

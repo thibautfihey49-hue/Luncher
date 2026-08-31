@@ -2,8 +2,8 @@
 package com.luncher
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Bundle
 import android.content.Intent
+import android.os.Bundle
 import com.thibautfihey.luncher.ThemeSettingsActivity
 import android.os.Environment
 import android.os.StatFs
