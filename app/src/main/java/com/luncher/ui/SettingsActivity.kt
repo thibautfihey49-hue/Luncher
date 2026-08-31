@@ -5,10 +5,12 @@ import android.content.SharedPreferences
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.Gravity
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.NotificationManagerCompat
 import com.luncher.util.GlassUtil
 
 class SettingsActivity: AppCompatActivity(){
@@ -17,7 +19,6 @@ class SettingsActivity: AppCompatActivity(){
         uri?.let{
             try{ contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }catch(_:Exception){}
             prefs.edit().putString("wallpaper_uri", it.toString()).apply()
-            Toast.makeText(this,"Fond changé",Toast.LENGTH_SHORT).show()
             recreate()
         }
     }
@@ -26,33 +27,31 @@ class SettingsActivity: AppCompatActivity(){
         prefs=getSharedPreferences("luncher",0)
         val root=ScrollView(this)
         val main=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bgLiquid(prefs); setPadding(24,80,24,28)}
+
         main.addView(TextView(this).apply{ text="Paramètres"; textSize=26f; setTextColor(Color.WHITE); typeface=android.graphics.Typeface.DEFAULT_BOLD; setPadding(0,0,0,20)})
-        main.addView(section("Fond d'écran"))
-        val wpRow=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(20,16,20,16); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
-        wpRow.addView(TextView(this).apply{ text="Appui long sur accueil aussi dispo"; setTextColor(Color.parseColor("#9CA3AF")); textSize=11f})
-        val wpBtn=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; setPadding(0,12,0,0)}
-        wpBtn.addView(TextView(this).apply{
-            text="📷 Galerie"; setTextColor(Color.WHITE); background=GlassUtil.searchBar(prefs).apply{ setColor(Color.parseColor("#3B82F6"))}
-            setPadding(22,14,22,14); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{ setMargins(0,0,8,0)}; gravity=Gravity.CENTER
-            setOnClickListener{ pickImage.launch("image/*") }
-        })
-        wpBtn.addView(TextView(this).apply{
-            text="✕ Reset"; setTextColor(Color.WHITE); background=GlassUtil.liquidCardSmall(prefs)
-            setPadding(18,14,18,14); gravity=Gravity.CENTER
-            setOnClickListener{ prefs.edit().remove("wallpaper_uri").apply(); recreate()}
-        })
-        wpRow.addView(wpBtn)
-        main.addView(wpRow)
+
+        // PERMISSIONS
+        main.addView(section("Autorisations requises"))
+        main.addView(actionRow("🔔 Accès notifications (WhatsApp/SMS/Gmail)", {
+            startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+        }))
+        main.addView(actionRow("📷 Choisir fond d'écran", { pickImage.launch("image/*") }))
+        main.addView(actionRow("✕ Reset fond", { prefs.edit().remove("wallpaper_uri").apply(); recreate()}))
+
+        main.addView(section("Apparence - taille icônes & texte"))
+        main.addView(sliderRow("Taille icônes", 48, 160, prefs.getInt("iconSize",92)) { v -> prefs.edit().putInt("iconSize",v).apply() })
+        main.addView(sliderRow("Taille texte", 8, 16, prefs.getInt("labelSize",10)) { v -> prefs.edit().putInt("labelSize",v).apply() })
+        main.addView(toggleRow("Afficher noms", prefs.getBoolean("showLabel",true)) { c -> prefs.edit().putBoolean("showLabel",c).apply() })
+        main.addView(sliderRow("Transparence", 30, 100, prefs.getInt("alpha",85)) { v -> prefs.edit().putInt("alpha",v).apply() })
+
         main.addView(section("Thème mec"))
         main.addView(choiceRow())
-        main.addView(section("Transparence"))
-        main.addView(sliderRow("Alpha", 40, 100, prefs.getInt("alpha",85)) { v -> prefs.edit().putInt("alpha",v).apply() })
+
         root.addView(main)
         setContentView(root)
     }
     private fun section(title:String)=TextView(this).apply{
-        text=title; textSize=13f; setTextColor(Color.WHITE)
-        typeface=android.graphics.Typeface.DEFAULT_BOLD
+        text=title; textSize=13f; setTextColor(Color.WHITE); typeface=android.graphics.Typeface.DEFAULT_BOLD
         background=GlassUtil.liquidCard(prefs); setPadding(20,14,20,14)
         layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,20,0,8)}
     }
@@ -67,14 +66,27 @@ class SettingsActivity: AppCompatActivity(){
         })
         row.addView(label); row.addView(seek); return row
     }
+    private fun toggleRow(name:String, cur:Boolean, onChange:(Boolean)->Unit): LinearLayout {
+        val row=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(18,14,18,14); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
+        row.addView(TextView(this).apply{ text=name; setTextColor(Color.WHITE); layoutParams=LinearLayout.LayoutParams(0,-2,1f)})
+        val sw=Switch(this).apply{ isChecked=cur}
+        sw.setOnCheckedChangeListener{ _,c -> onChange(c)}
+        row.addView(sw); return row
+    }
     private fun choiceRow(): LinearLayout {
         val row=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(18,14,18,14); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
         val cur=prefs.getString("theme","dark")!!
-        listOf("black" to "⚫ AMOLED Noir","dark" to "🌑 Dark","blue" to "🔵 Bleu nuit","grey" to "⚙️ Gris béton").forEach{ (v,l) ->
+        listOf("black" to "⚫ AMOLED","dark" to "🌑 Dark","blue" to "🔵 Bleu nuit","grey" to "⚙️ Gris").forEach{ (v,l) ->
             val rb=RadioButton(this).apply{ text=l; isChecked=(v==cur); setTextColor(Color.WHITE); textSize=12f}
             rb.setOnClickListener{ prefs.edit().putString("theme",v).remove("wallpaper_uri").apply(); recreate()}
             row.addView(rb)
         }
         return row
+    }
+    private fun actionRow(name:String, action:()->Unit)=TextView(this).apply{
+        text=name; textSize=12f; setTextColor(Color.WHITE)
+        background=GlassUtil.liquidCard(prefs); setPadding(20,14,20,14)
+        layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}
+        setOnClickListener{ action()}
     }
 }
