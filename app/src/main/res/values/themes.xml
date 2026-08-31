@@ -1,7 +1,5 @@
 <resources>
-    <style name="Theme.Luncher" parent="Theme.Material3.Light.NoActionBar">
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
-        <item name="android:windowIsTranslucent">true</item>
+    <style name="Theme.Luncher" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#0F1115</item>
     </style>
 </resources>
