@@ -1,92 +1,80 @@
 package com.luncher.ui
 
+import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.luncher.util.GlassUtil
 
 class SettingsActivity: AppCompatActivity(){
     private lateinit var prefs:SharedPreferences
+    private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()){ uri: Uri? ->
+        uri?.let{
+            try{ contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }catch(_:Exception){}
+            prefs.edit().putString("wallpaper_uri", it.toString()).apply()
+            Toast.makeText(this,"Fond changé",Toast.LENGTH_SHORT).show()
+            recreate()
+        }
+    }
     override fun onCreate(b:Bundle?){
         super.onCreate(b)
         prefs=getSharedPreferences("luncher",0)
         val root=ScrollView(this)
-        val main=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bgLiquid(prefs); setPadding(28,80,28,28)}
-
-        main.addView(TextView(this).apply{ text="Liquid Glass Settings"; textSize=22f; setTextColor(Color.parseColor("#111827")); typeface=android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD_ITALIC); setPadding(0,0,0,16)})
-
-        main.addView(section("Liquid Glass"))
-        main.addView(sliderRow("Transparence", 40, 100, prefs.getInt("alpha",70)) { newVal -> prefs.edit().putInt("alpha",newVal).apply() })
-
-        main.addView(section("Desktop Icon"))
-        main.addView(sliderRow("Taille icônes", 64, 140, prefs.getInt("iconSize",96)) { newVal -> prefs.edit().putInt("iconSize",newVal).apply() })
-        main.addView(toggleRow("Afficher labels", prefs.getBoolean("showLabel",true)) { checked -> prefs.edit().putBoolean("showLabel",checked).apply() })
-
-        main.addView(section("Drawer Icon"))
-        main.addView(sliderRow("Taille label", 8, 14, prefs.getInt("labelSize",10)) { newVal -> prefs.edit().putInt("labelSize",newVal).apply() })
-
-        main.addView(section("Home screen style"))
+        val main=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bgLiquid(prefs); setPadding(24,80,24,28)}
+        main.addView(TextView(this).apply{ text="Paramètres"; textSize=26f; setTextColor(Color.WHITE); typeface=android.graphics.Typeface.DEFAULT_BOLD; setPadding(0,0,0,20)})
+        main.addView(section("Fond d'écran"))
+        val wpRow=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(20,16,20,16); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
+        wpRow.addView(TextView(this).apply{ text="Appui long sur accueil aussi dispo"; setTextColor(Color.parseColor("#9CA3AF")); textSize=11f})
+        val wpBtn=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; setPadding(0,12,0,0)}
+        wpBtn.addView(TextView(this).apply{
+            text="📷 Galerie"; setTextColor(Color.WHITE); background=GlassUtil.searchBar(prefs).apply{ setColor(Color.parseColor("#3B82F6"))}
+            setPadding(22,14,22,14); layoutParams=LinearLayout.LayoutParams(0,-2,1f).apply{ setMargins(0,0,8,0)}; gravity=Gravity.CENTER
+            setOnClickListener{ pickImage.launch("image/*") }
+        })
+        wpBtn.addView(TextView(this).apply{
+            text="✕ Reset"; setTextColor(Color.WHITE); background=GlassUtil.liquidCardSmall(prefs)
+            setPadding(18,14,18,14); gravity=Gravity.CENTER
+            setOnClickListener{ prefs.edit().remove("wallpaper_uri").apply(); recreate()}
+        })
+        wpRow.addView(wpBtn)
+        main.addView(wpRow)
+        main.addView(section("Thème mec"))
         main.addView(choiceRow())
-
-        listOf("Desktop","App drawer","Dock","Folder","Theme & Icon","Notification badges").forEach{ name ->
-            main.addView(section(name))
-            main.addView(TextView(this).apply{
-                text="Option $name active"; textSize=12f; setTextColor(Color.parseColor("#6B7280"))
-                background=GlassUtil.liquidCard(prefs); setPadding(24,18,24,18)
-                layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}
-            })
-        }
-
+        main.addView(section("Transparence"))
+        main.addView(sliderRow("Alpha", 40, 100, prefs.getInt("alpha",85)) { v -> prefs.edit().putInt("alpha",v).apply() })
         root.addView(main)
         setContentView(root)
     }
-
     private fun section(title:String)=TextView(this).apply{
-        text=title; textSize=16f; setTextColor(Color.parseColor("#111827"))
-        typeface=android.graphics.Typeface.create("serif", android.graphics.Typeface.BOLD_ITALIC)
-        background=GlassUtil.liquidCard(prefs); setPadding(24,18,24,18)
-        layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,16,0,8)}
+        text=title; textSize=13f; setTextColor(Color.WHITE)
+        typeface=android.graphics.Typeface.DEFAULT_BOLD
+        background=GlassUtil.liquidCard(prefs); setPadding(20,14,20,14)
+        layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,20,0,8)}
     }
-
     private fun sliderRow(name:String, min:Int, max:Int, cur:Int, onChange:(Int)->Unit): LinearLayout {
-        val row=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(20,16,20,16); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
-        val label=TextView(this).apply{ text="$name: $cur"; setTextColor(Color.parseColor("#111827")); textSize=13f}
+        val row=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(18,14,18,14); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
+        val label=TextView(this).apply{ text="$name: $cur"; setTextColor(Color.WHITE); textSize=12f}
         val seek=SeekBar(this).apply{ this.max=max-min; progress=cur-min}
         seek.setOnSeekBarChangeListener(object: SeekBar.OnSeekBarChangeListener{
-            override fun onProgressChanged(s:SeekBar?, p:Int, f:Boolean){ val newV=p+min; label.text="$name: $newV"; onChange(newV)}
+            override fun onProgressChanged(s:SeekBar?, p:Int, f:Boolean){ val nv=p+min; label.text="$name: $nv"; onChange(nv)}
             override fun onStartTrackingTouch(s:SeekBar?){}
             override fun onStopTrackingTouch(s:SeekBar?){}
         })
-        row.addView(label); row.addView(seek)
-        return row
+        row.addView(label); row.addView(seek); return row
     }
-
-    private fun toggleRow(name:String, cur:Boolean, onChange:(Boolean)->Unit): LinearLayout {
-        val row=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(20,16,20,16); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
-        row.addView(TextView(this).apply{ text=name; setTextColor(Color.parseColor("#111827")); layoutParams=LinearLayout.LayoutParams(0,-2,1f)})
-        val sw=Switch(this).apply{ isChecked=cur}
-        sw.setOnCheckedChangeListener{ _,checked -> onChange(checked)}
-        row.addView(sw)
-        return row
-    }
-
     private fun choiceRow(): LinearLayout {
-        val row=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(20,16,20,16); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
-        row.addView(TextView(this).apply{ text="Thème"; setTextColor(Color.parseColor("#111827"))})
-        val group=RadioGroup(this).apply{ orientation=RadioGroup.HORIZONTAL}
-        val current=prefs.getString("theme","light")!!
-        listOf("light" to "Light","purple" to "Purple","dark" to "Dark").forEach{ (value,label) ->
-            val rb=RadioButton(this).apply{ text=label; isChecked=(value==current); textSize=11f}
-            rb.setOnClickListener{
-                prefs.edit().putString("theme",value).apply()
-                (row.parent as? LinearLayout)?.let{ parent -> parent.background=GlassUtil.bgLiquid(prefs)}
-            }
-            group.addView(rb)
+        val row=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.liquidCard(prefs); setPadding(18,14,18,14); layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,8)}}
+        val cur=prefs.getString("theme","dark")!!
+        listOf("black" to "⚫ AMOLED Noir","dark" to "🌑 Dark","blue" to "🔵 Bleu nuit","grey" to "⚙️ Gris béton").forEach{ (v,l) ->
+            val rb=RadioButton(this).apply{ text=l; isChecked=(v==cur); setTextColor(Color.WHITE); textSize=12f}
+            rb.setOnClickListener{ prefs.edit().putString("theme",v).remove("wallpaper_uri").apply(); recreate()}
+            row.addView(rb)
         }
-        row.addView(group)
         return row
     }
 }

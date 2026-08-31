@@ -3,11 +3,13 @@ package com.luncher.ui
 import android.content.Intent
 import android.content.SharedPreferences
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.widget.*
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.luncher.util.GlassUtil
 import java.text.SimpleDateFormat
@@ -22,66 +24,108 @@ class LauncherActivity: AppCompatActivity(){
     private var intents:Map<String,Intent> = emptyMap()
     private var filter=""
     private lateinit var prefs:SharedPreferences
+    private lateinit var rootBg:LinearLayout
     private val handler=Handler(Looper.getMainLooper())
+
+    private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()){ uri: Uri? ->
+        uri?.let{
+            try{ contentResolver.takePersistableUriPermission(it, Intent.FLAG_GRANT_READ_URI_PERMISSION) }catch(_:Exception){}
+            prefs.edit().putString("wallpaper_uri", it.toString()).apply()
+            applyWallpaper()
+            Toast.makeText(this,"Fond changé",Toast.LENGTH_SHORT).show()
+        }
+    }
 
     override fun onCreate(b:Bundle?){
         super.onCreate(b)
         prefs=getSharedPreferences("luncher",0)
-
-        val root=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bgLiquid(prefs); setPadding(32,80,32,24)}
-
-        // HEURE + DATE SEULEMENT
+        rootBg=LinearLayout(this).apply{
+            orientation=LinearLayout.VERTICAL
+            setPadding(28,70,28,24)
+            setOnLongClickListener{ showWallpaperDialog(); true}
+        }
         timeView=TextView(this).apply{
-            textSize=46f; setTextColor(Color.parseColor("#111827")); gravity=Gravity.CENTER
-            typeface=android.graphics.Typeface.create("sans-serif-light",0)
+            textSize=48f; gravity=Gravity.CENTER
+            setTextColor(Color.WHITE)
+            typeface=android.graphics.Typeface.create("sans-serif-medium",0)
         }
         dateView=TextView(this).apply{
-            textSize=15f; setTextColor(Color.parseColor("#6B7280")); gravity=Gravity.CENTER
-            typeface=android.graphics.Typeface.create("sans-serif-medium",0)
-            setPadding(0,4,0,24)
+            textSize=13f; gravity=Gravity.CENTER
+            setTextColor(Color.parseColor("#9CA3AF"))
+            setPadding(0,4,0,20)
         }
-        root.addView(timeView)
-        root.addView(dateView)
+        rootBg.addView(timeView)
+        rootBg.addView(dateView)
         updateTime()
+        applyWallpaper()
 
-        // BOUTON PARAMETRES EN HAUT DROIT COMME AVANT
         val topBar=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; gravity=Gravity.END}
         topBar.addView(TextView(this).apply{
             text="⚙️"; textSize=18f; gravity=Gravity.CENTER
-            background=GlassUtil.liquidCard(prefs); setPadding(24,16,24,16)
+            background=GlassUtil.liquidCardSmall(prefs); setPadding(22,14,22,14)
+            setTextColor(Color.WHITE)
             setOnClickListener{ startActivity(Intent(this@LauncherActivity, SettingsActivity::class.java))}
         })
-        root.addView(topBar, LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,16)})
+        rootBg.addView(topBar, LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,16)})
 
-        // BARRE DE RECHERCHE
         search=EditText(this).apply{
-            hint="Rechercher une application..."; setHintTextColor(Color.parseColor("#8A8FA3")); setTextColor(Color.parseColor("#111827")); textSize=15f
-            background=GlassUtil.searchBar(prefs); setPadding(48,32,48,32)
-            layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,20)}
+            hint="Rechercher..."; textSize=14f
+            setTextColor(Color.WHITE); setHintTextColor(Color.parseColor("#6B7280"))
+            background=GlassUtil.searchBar(prefs); setPadding(44,28,44,28)
+            layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,18)}
         }
         search.addTextChangedListener(object: android.text.TextWatcher{
             override fun afterTextChanged(s: android.text.Editable?){ filter=s.toString(); refreshApps()}
             override fun beforeTextChanged(a:CharSequence?,b:Int,c:Int,d:Int){}
             override fun onTextChanged(a:CharSequence?,b:Int,c:Int,d:Int){}
         })
-        root.addView(search)
+        rootBg.addView(search)
 
-        // TOUTES LES APPS SCROLLABLE
-        val scroll=ScrollView(this).apply{ isVerticalScrollBarEnabled=false}
-        appsContainer=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL}
+        val scroll=ScrollView(this).apply{ isVerticalScrollBarEnabled=false }
+        appsContainer=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL }
         scroll.addView(appsContainer)
-        root.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
+        rootBg.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
 
-        setContentView(root)
+        setContentView(rootBg)
         loadApps(); refreshApps()
+    }
+
+    private fun showWallpaperDialog(){
+        val options=arrayOf("📷 Galerie","⚫ Noir AMOLED","🌑 Dark Gris","🔵 Bleu nuit","✕ Reset")
+        android.app.AlertDialog.Builder(this)
+          .setTitle("Fond d'écran")
+          .setItems(options){ _, which ->
+                when(which){
+                    0 -> pickImage.launch("image/*")
+                    1 -> { prefs.edit().putString("theme","black").remove("wallpaper_uri").apply(); applyWallpaper(); refreshApps()}
+                    2 -> { prefs.edit().putString("theme","dark").remove("wallpaper_uri").apply(); applyWallpaper(); refreshApps()}
+                    3 -> { prefs.edit().putString("theme","blue").remove("wallpaper_uri").apply(); applyWallpaper(); refreshApps()}
+                    4 -> { prefs.edit().remove("wallpaper_uri").apply(); applyWallpaper()}
+                }
+            }.show()
+    }
+
+    private fun applyWallpaper(){
+        val wpUri = prefs.getString("wallpaper_uri",null)
+        if(wpUri!=null){
+            try{
+                val uri=Uri.parse(wpUri)
+                val input=contentResolver.openInputStream(uri)
+                val drawable=android.graphics.drawable.Drawable.createFromStream(input,null)
+                rootBg.background=drawable
+                input?.close()
+                return
+            }catch(_:Exception){}
+        }
+        rootBg.background=GlassUtil.bgLiquid(prefs)
     }
 
     private fun updateTime(){
         try{
             val now=Date()
             timeView.text=SimpleDateFormat("HH:mm", Locale.FRENCH).format(now)
-            dateView.text=SimpleDateFormat("EEEE d MMMM", Locale.FRENCH).format(now).replaceFirstChar{ it.uppercase()}
-            handler.postDelayed({updateTime()}, 1000*30)
+            dateView.text=SimpleDateFormat("EEEE d MMM", Locale.FRENCH).format(now).uppercase()
+            handler.postDelayed({updateTime()}, 30000)
         }catch(_:Exception){}
     }
 
@@ -107,35 +151,36 @@ class LauncherActivity: AppCompatActivity(){
 
     private fun refreshApps(){
         appsContainer.removeAllViews()
-        val iconSize=prefs.getInt("iconSize",96)
-        val filtered=allApps.filter{ it.first.contains(filter,true)}.take(200)
+        val iconSize=prefs.getInt("iconSize",92)
+        val filtered=allApps.filter{ it.first.contains(filter,true)}.take(300)
         var row:LinearLayout?=null
         filtered.forEachIndexed{ index,(label,_,icon) ->
             if(index%4==0){
-                row=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL}
-                appsContainer.addView(row, LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,14)})
+                row=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL }
+                appsContainer.addView(row, LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,12)})
             }
             val item=LinearLayout(this).apply{
                 orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER
                 layoutParams=LinearLayout.LayoutParams(0,-2,1f)
                 setOnClickListener{ try{ intents[label]?.let{ startActivity(it)}}catch(_:Exception){}}
+                setOnLongClickListener{ showWallpaperDialog(); true}
             }
             item.addView(ImageView(this).apply{
                 setImageDrawable(icon)
                 layoutParams=LinearLayout.LayoutParams(iconSize,iconSize)
                 background=GlassUtil.liquidCardSmall(prefs)
-                setPadding(10,10,10,10)
+                setPadding(8,8,8,8)
             })
             if(prefs.getBoolean("showLabel",true)){
                 item.addView(TextView(this).apply{
                     text=label; textSize=prefs.getInt("labelSize",10).toFloat()
-                    setTextColor(Color.parseColor("#111827")); gravity=Gravity.CENTER; maxLines=1
+                    setTextColor(Color.WHITE)
+                    gravity=Gravity.CENTER; maxLines=1
                     setPadding(0,6,0,0)
                 })
             }
             row?.addView(item)
         }
     }
-    override fun onResume(){ super.onResume(); loadApps(); refreshApps(); rootView?.background=GlassUtil.bgLiquid(prefs)}
-    private val rootView get() = window.decorView as? LinearLayout
+    override fun onResume(){ super.onResume(); applyWallpaper(); loadApps(); refreshApps()}
 }
