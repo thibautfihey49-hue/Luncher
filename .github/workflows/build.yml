@@ -9,12 +9,10 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Clean
-        run: |
-          chmod +x gradlew
-         ./gradlew clean --no-daemon --no-build-cache
+      - name: Make gradlew executable
+        run: chmod +x gradlew
       - name: Build APK
-        run:./gradlew assembleDebug --no-daemon --no-build-cache --refresh-dependencies
+        run:./gradlew assembleDebug --no-daemon
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
