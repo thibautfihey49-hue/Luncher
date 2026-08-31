@@ -9,9 +9,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '17'
-      - name: Clean everything
+      - name: Clean
         run: |
-          rm -rf app/build.gradle build ~/.gradle/caches
           chmod +x gradlew
          ./gradlew clean --no-daemon --no-build-cache
       - name: Build APK
