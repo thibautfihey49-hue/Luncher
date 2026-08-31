@@ -6,8 +6,8 @@ android {
         applicationId "com.luncher"
         minSdk 26
         targetSdk 34
-        versionCode 36
-        versionName "36.0-SAFE"
+        versionCode 40
+        versionName "40.0-CACHE-FIX"
     }
     buildTypes {
         release { minifyEnabled false; shrinkResources false }
