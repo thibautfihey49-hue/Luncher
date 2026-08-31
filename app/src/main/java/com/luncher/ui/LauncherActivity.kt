@@ -2,13 +2,12 @@ package com.luncher.ui
 
 import android.content.Intent
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.luncher.files.FilesActivity
-import com.luncher.phone.PhoneActivity
-import com.luncher.sms.SmsActivity
 import com.luncher.util.GlassUtil
 import com.luncher.util.IconUtil
 
@@ -22,7 +21,6 @@ class LauncherActivity: AppCompatActivity(){
         val t=GlassUtil.get(this)
         val root=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bg(t); setPadding(32,110,32,24)}
 
-        // Header premium
         val header=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL}
         header.addView(LinearLayout(this).apply{
             orientation=LinearLayout.VERTICAL; layoutParams=LinearLayout.LayoutParams(0,-2,1f)
@@ -32,7 +30,6 @@ class LauncherActivity: AppCompatActivity(){
         header.addView(TextView(this).apply{ text="◍"; textSize=22f; setTextColor(Color.WHITE); background=GlassUtil.card(100f); setPadding(28,20,28,20); setOnClickListener{ startActivity(Intent(this@LauncherActivity, ThemeActivity::class.java))}})
         root.addView(header)
 
-        // Search pro
         val search=EditText(this).apply{
             hint="Search apps"; setHintTextColor(Color.parseColor("#66FFFFFF")); setTextColor(Color.WHITE); textSize=16f
             background=GlassUtil.card(100f, "#1AFFFFFF", "#22FFFFFF")
@@ -51,28 +48,31 @@ class LauncherActivity: AppCompatActivity(){
         scroll.addView(list)
         root.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
 
-        // Dock PRO avec icônes stylées
         val dock=LinearLayout(this).apply{
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER
             background=GlassUtil.card(32f, "#1AFFFFFF", "#22FFFFFF")
             setPadding(20,20,20,20)
             layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,16,0,0)}
         }
-        dock.addView(dockItem("Phone", PhoneActivity::class.java.name, "phone"))
-        dock.addView(dockItem("Messages", SmsActivity::class.java.name, "sms"))
-        dock.addView(dockItem("Files", FilesActivity::class.java.name, "files"))
+        dock.addView(dockItem("Phone", "phone") { startActivity(Intent(Intent.ACTION_DIAL)) })
+        dock.addView(dockItem("Messages", "sms") {
+            try{ startActivity(Intent(Intent.ACTION_MAIN).apply{ setType("vnd.android-dir/mms-sms") })}catch(_:Exception){
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:")))
+            }
+        })
+        dock.addView(dockItem("Files", "files") { startActivity(Intent(this@LauncherActivity, FilesActivity::class.java)) })
         root.addView(dock)
 
         setContentView(root)
         load(); refresh()
     }
 
-    private fun dockItem(name:String, cls:String, type:String)=LinearLayout(this).apply{
+    private fun dockItem(name:String, type:String, onClick:()->Unit)=LinearLayout(this).apply{
         orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER
         layoutParams=LinearLayout.LayoutParams(0,-2,1f)
         setPadding(8,8,8,8)
-        setOnClickListener{ startActivity(Intent().setClassName(packageName,cls))}
-        val icon=TextView(this@LauncherActivity).apply{ layoutParams=LinearLayout.LayoutParams(112,112)}
+        setOnClickListener{ onClick() }
+        val icon=TextView(this@LauncherActivity).apply{ layoutParams=LinearLayout.LayoutParams(112,112); gravity=Gravity.CENTER}
         when(type){ "phone"->IconUtil.phoneIcon(icon); "sms"->IconUtil.smsIcon(icon); else->IconUtil.filesIcon(icon)}
         addView(icon)
         addView(TextView(this@LauncherActivity).apply{ text=name; textSize=11f; setTextColor(Color.parseColor("#9AA0C0")); gravity=Gravity.CENTER; setPadding(0,10,0,0)})
