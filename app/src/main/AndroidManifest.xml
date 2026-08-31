@@ -11,5 +11,6 @@
         <activity android:name=".LauncherActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.HOME"/><category android:name="android.intent.category.DEFAULT"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
         <activity android:name=".PhoneAppActivity" android:exported="false"/><activity android:name=".SmsAppActivity" android:exported="false"/><activity android:name=".FileManagerActivity" android:exported="false"/>
         <provider android:name="androidx.core.content.FileProvider" android:authorities="${applicationId}.provider" android:exported="false" android:grantUriPermissions="true"><meta-data android:name="android.support.FILE_PROVIDER_PATHS" android:resource="@xml/file_paths"/></provider>
-    </application>
+     <activity android:name=".ThemeSettingsActivity" android:exported="false" android:theme="@style/Theme.AppCompat.DayNight" />
+ </application>
 </manifest>
