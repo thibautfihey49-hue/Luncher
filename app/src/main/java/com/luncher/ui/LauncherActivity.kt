@@ -17,24 +17,31 @@ class LauncherActivity: AppCompatActivity(){
     private var intents:Map<String,Intent> = emptyMap()
     private var filter=""
 
-    override fun onCreate(savedInstanceState: Bundle?){ super.onCreate(savedInstanceState)
-        val t=GlassUtil.get(this)
-        val root=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bg(t); setPadding(32,110,32,24)}
+    override fun onCreate(savedInstanceState: Bundle?){
+        super.onCreate(savedInstanceState)
+        val root=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; background=GlassUtil.bg(); setPadding(32,90,32,24)}
 
+        // Header light
         val header=LinearLayout(this).apply{ orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL}
-        header.addView(LinearLayout(this).apply{
-            orientation=LinearLayout.VERTICAL; layoutParams=LinearLayout.LayoutParams(0,-2,1f)
-            addView(TextView(this@LauncherActivity).apply{ text="Luncher"; textSize=36f; setTextColor(Color.WHITE); typeface=android.graphics.Typeface.create("sans-serif-black",0)})
-            addView(TextView(this@LauncherActivity).apply{ text="OS 2.0 • Glass"; textSize=12f; setTextColor(Color.parseColor("#9AA0C0"))})
+        val left=LinearLayout(this).apply{ orientation=LinearLayout.VERTICAL; layoutParams=LinearLayout.LayoutParams(0,-2,1f)}
+        left.addView(TextView(this@LauncherActivity).apply{
+            text="Luncher"; textSize=34f; setTextColor(Color.parseColor("#111827"))
+            typeface=android.graphics.Typeface.create("sans-serif", android.graphics.Typeface.BOLD)
         })
-        header.addView(TextView(this).apply{ text="◍"; textSize=22f; setTextColor(Color.WHITE); background=GlassUtil.card(100f); setPadding(28,20,28,20); setOnClickListener{ startActivity(Intent(this@LauncherActivity, ThemeActivity::class.java))}})
+        left.addView(TextView(this@LauncherActivity).apply{ text="Light • Glass"; textSize=12f; setTextColor(Color.parseColor("#9CA3AF")); typeface=android.graphics.Typeface.create("sans-serif-medium",0)})
+        header.addView(left)
+        header.addView(TextView(this).apply{
+            text="◍"; textSize=20f; setTextColor(Color.parseColor("#111827"))
+            background=GlassUtil.card(); setPadding(26,18,26,18)
+            setOnClickListener{ startActivity(Intent(this@LauncherActivity, ThemeActivity::class.java))}
+        })
         root.addView(header)
 
         val search=EditText(this).apply{
-            hint="Search apps"; setHintTextColor(Color.parseColor("#66FFFFFF")); setTextColor(Color.WHITE); textSize=16f
-            background=GlassUtil.card(100f, "#1AFFFFFF", "#22FFFFFF")
-            setPadding(52,40,52,40)
-            layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,36,0,20)}
+            hint="Rechercher une app"; setHintTextColor(Color.parseColor("#9CA3AF")); setTextColor(Color.parseColor("#111827")); textSize=15f
+            background=GlassUtil.searchBg(); setPadding(48,36,48,36)
+            layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,28,0,20)}
+            typeface=android.graphics.Typeface.create("sans-serif",0)
         }
         search.addTextChangedListener(object:android.text.TextWatcher{
             override fun afterTextChanged(s:android.text.Editable?){ filter=s.toString(); refresh()}
@@ -48,63 +55,62 @@ class LauncherActivity: AppCompatActivity(){
         scroll.addView(list)
         root.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
 
+        // Dock light glass
         val dock=LinearLayout(this).apply{
             orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER
-            background=GlassUtil.card(32f, "#1AFFFFFF", "#22FFFFFF")
-            setPadding(20,20,20,20)
+            background=GlassUtil.dock(); setPadding(20,20,20,20)
             layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,16,0,0)}
         }
-        dock.addView(dockItem("Phone", "phone") { startActivity(Intent(Intent.ACTION_DIAL)) })
-        dock.addView(dockItem("Messages", "sms") {
-            try{ startActivity(Intent(Intent.ACTION_MAIN).apply{ setType("vnd.android-dir/mms-sms") })}catch(_:Exception){
-                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:")))
-            }
-        })
-        dock.addView(dockItem("Files", "files") { startActivity(Intent(this@LauncherActivity, FilesActivity::class.java)) })
+        dock.addView(dockItem("Phone","phone"){ startActivity(Intent(Intent.ACTION_DIAL))})
+        dock.addView(dockItem("Messages","sms"){ try{ startActivity(Intent(Intent.ACTION_MAIN).apply{ type="vnd.android-dir/mms-sms"}) }catch(_:Exception){ startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("sms:"))) }})
+        dock.addView(dockItem("Files","files"){ startActivity(Intent(this@LauncherActivity, FilesActivity::class.java))})
         root.addView(dock)
 
         setContentView(root)
         load(); refresh()
     }
 
-    private fun dockItem(name:String, type:String, onClick:()->Unit)=LinearLayout(this).apply{
+    private fun dockItem(name:String, type:String, click:()->Unit)=LinearLayout(this).apply{
         orientation=LinearLayout.VERTICAL; gravity=Gravity.CENTER
-        layoutParams=LinearLayout.LayoutParams(0,-2,1f)
-        setPadding(8,8,8,8)
-        setOnClickListener{ onClick() }
-        val icon=TextView(this@LauncherActivity).apply{ layoutParams=LinearLayout.LayoutParams(112,112); gravity=Gravity.CENTER}
-        when(type){ "phone"->IconUtil.phoneIcon(icon); "sms"->IconUtil.smsIcon(icon); else->IconUtil.filesIcon(icon)}
+        layoutParams=LinearLayout.LayoutParams(0,-2,1f); setPadding(8,8,8,8)
+        setOnClickListener{ click()}
+        val icon=TextView(this@LauncherActivity).apply{ layoutParams=LinearLayout.LayoutParams(108,108); gravity=Gravity.CENTER}
+        when(type){ "phone"->IconUtil.phone(icon); "sms"->IconUtil.sms(icon); else->IconUtil.files(icon)}
         addView(icon)
-        addView(TextView(this@LauncherActivity).apply{ text=name; textSize=11f; setTextColor(Color.parseColor("#9AA0C0")); gravity=Gravity.CENTER; setPadding(0,10,0,0)})
+        addView(TextView(this@LauncherActivity).apply{ text=name; textSize=11f; setTextColor(Color.parseColor("#6B7280")); gravity=Gravity.CENTER; setPadding(0,8,0,0); typeface=android.graphics.Typeface.create("sans-serif-medium",0)})
     }
 
     private fun load(){
-        val pm=packageManager; val i=Intent(Intent.ACTION_MAIN,null).apply{ addCategory(Intent.CATEGORY_LAUNCHER)}
-        val res=pm.queryIntentActivities(i,0); val map=mutableMapOf<String,Intent>()
-        all=res.mapNotNull{
-            try{
-                val pkg=it.activityInfo.packageName; if(pkg==packageName) return@mapNotNull null
-                val intent=pm.getLaunchIntentForPackage(pkg)?:return@mapNotNull null
-                map[it.loadLabel(pm).toString()]=intent
-                Triple(it.loadLabel(pm).toString(), pkg, it.loadIcon(pm))
-            }catch(_:Exception){ null}
-        }.sortedBy{ it.first.lowercase()}.distinctBy{ it.second }
-        intents=map
+        try{
+            val pm=packageManager
+            val i=Intent(Intent.ACTION_MAIN,null).apply{ addCategory(Intent.CATEGORY_LAUNCHER)}
+            val res=pm.queryIntentActivities(i,0)
+            val map=mutableMapOf<String,Intent>()
+            all=res.mapNotNull{
+                try{
+                    val pkg=it.activityInfo.packageName
+                    if(pkg==packageName) return@mapNotNull null
+                    val launch=pm.getLaunchIntentForPackage(pkg)?:return@mapNotNull null
+                    map[it.loadLabel(pm).toString()]=launch
+                    Triple(it.loadLabel(pm).toString(), pkg, it.loadIcon(pm))
+                }catch(_:Exception){null}
+            }.sortedBy{it.first.lowercase()}.distinctBy{it.second}
+            intents=map
+        }catch(_:Exception){}
     }
 
     private fun refresh(){
         list.removeAllViews()
-        all.filter{ it.first.contains(filter,true)}.take(60).forEach{ (label,_,icon) ->
+        all.filter{ it.first.contains(filter,true)}.take(50).forEach{ (label,_,icon)->
             val row=LinearLayout(this).apply{
                 orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL
-                background=GlassUtil.cardSolid()
-                setPadding(18,16,18,16)
-                layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,12)}
-                setOnClickListener{ intents[label]?.let{ startActivity(it) }}
+                background=GlassUtil.card(); setPadding(16,14,16,14)
+                layoutParams=LinearLayout.LayoutParams(-1,-2).apply{ setMargins(0,0,0,10)}
+                setOnClickListener{ try{ intents[label]?.let{ startActivity(it)}}catch(_:Exception){}}
             }
-            row.addView(ImageView(this).apply{ setImageDrawable(icon); layoutParams=LinearLayout.LayoutParams(92,92).apply{ setMargins(0,0,18,0)}})
-            row.addView(TextView(this).apply{ text=label; textSize=16f; setTextColor(Color.WHITE); layoutParams=LinearLayout.LayoutParams(0,-2,1f); typeface=android.graphics.Typeface.create("sans-serif-medium",0)})
-            row.addView(TextView(this).apply{ text="↗"; setTextColor(Color.parseColor("#9AA0C0"))})
+            row.addView(ImageView(this).apply{ setImageDrawable(icon); layoutParams=LinearLayout.LayoutParams(88,88).apply{ setMargins(0,0,16,0)}})
+            row.addView(TextView(this).apply{ text=label; textSize=15f; setTextColor(Color.parseColor("#111827")); layoutParams=LinearLayout.LayoutParams(0,-2,1f); typeface=android.graphics.Typeface.create("sans-serif-medium",0)})
+            row.addView(TextView(this).apply{ text="›"; textSize=20f; setTextColor(Color.parseColor("#9CA3AF"))})
             list.addView(row)
         }
     }

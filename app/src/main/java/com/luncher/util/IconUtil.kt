@@ -1,27 +1,15 @@
 package com.luncher.util
-
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.widget.TextView
+import android.view.Gravity
 
 object IconUtil{
-    fun styleIcon(tv:TextView, emoji:String, colors:List<String>){
-        tv.text=emoji
-        tv.textSize=26f
-        tv.setTextColor(Color.WHITE)
+    fun style(tv:TextView, emoji:String, colors:List<String>){
+        tv.text=emoji; tv.textSize=24f; tv.setTextColor(Color.WHITE)
         tv.background=GlassUtil.iconBg(colors)
-        tv.setPadding(0,22,0,22)
-        tv.gravity=android.view.Gravity.CENTER
+        tv.setPadding(0,22,0,22); tv.gravity=Gravity.CENTER
     }
-    fun phoneIcon(tv:TextView){ styleIcon(tv,"📞", listOf("#4CAF50","#2E7D32"))}
-    fun smsIcon(tv:TextView){ styleIcon(tv,"💬", listOf("#7C4DFF","#00E5FF"))}
-    fun filesIcon(tv:TextView){ styleIcon(tv,"📁", listOf("#FFC107","#FF9800"))}
-    fun contactIcon(tv:TextView, name:String){
-        val cols=listOf(listOf("#7C4DFF","#00E5FF"), listOf("#FF6B6B","#FF8E53"), listOf("#4CAF50","#8BC34A"), listOf("#2196F3","#21CBF3"))
-        tv.text=name.firstOrNull()?.uppercase()?:"?"
-        tv.textSize=18f
-        tv.setTextColor(Color.WHITE)
-        tv.background=GlassUtil.iconBg(cols.random())
-        tv.gravity=android.view.Gravity.CENTER
-    }
+    fun phone(tv:TextView){ style(tv,"📞", listOf("#4CD964","#2FB344"))}
+    fun sms(tv:TextView){ style(tv,"💬", listOf("#7C4DFF","#5A8CFF"))}
+    fun files(tv:TextView){ style(tv,"📁", listOf("#FFCC00","#FF9500"))}
 }
