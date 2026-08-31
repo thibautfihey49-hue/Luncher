@@ -1,4 +1,7 @@
-plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
+plugins {
+    id 'com.android.application'
+    id 'org.jetbrains.kotlin.android'
+}
 android {
     namespace 'com.luncher'
     compileSdk 34
@@ -6,20 +9,28 @@ android {
         applicationId "com.luncher"
         minSdk 26
         targetSdk 34
-        versionCode 33
-        versionName "33.0-ULTRA-LIGHT"
+        versionCode 12
+        versionName "12.0-MASC"
     }
     buildTypes {
-        release { minifyEnabled true; shrinkResources true; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
-        debug { minifyEnabled true; shrinkResources true; proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro' }
+        release {
+            minifyEnabled false
+        }
+        debug {
+            minifyEnabled false
+        }
     }
-    compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
-    kotlinOptions { jvmTarget = '17' }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 dependencies {
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
-    implementation 'androidx.recyclerview:recyclerview:1.3.2'
-    implementation 'androidx.cardview:cardview:1.0.0'
+    // Pas de play:core ici - c'est ce qui faisait crash
 }
