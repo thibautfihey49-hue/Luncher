@@ -2,41 +2,50 @@ package com.thibautfihey.luncher
 
 import android.graphics.Color
 import android.os.Bundle
+import android.view.ViewGroup
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.luncher.util.ThemeUtil
-import java.io.File
 
 class ThemeSettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        try{
-            ThemeUtil.log(this, "ThemeSettings start")
-            val scroll = ScrollView(this)
-            val col = LinearLayout(this).apply{ orientation = LinearLayout.VERTICAL; setPadding(32,32,32,32); setBackgroundColor(Color.parseColor("#121212")) }
-
-            col.addView(TextView(this).apply{ text="Themes - clique pour appliquer"; setTextColor(Color.WHITE); textSize=20f; setPadding(0,0,0,20)})
-
-            val logFile = File(filesDir, "luncher_debug.txt")
-            if(logFile.exists()){
-                col.addView(TextView(this).apply{ text="DEBUG:\n${logFile.readText().take(2000)}"; setTextColor(Color.YELLOW); textSize=11f; setPadding(0,0,0,20)})
-                col.addView(Button(this).apply{ text="Effacer log"; setOnClickListener{ logFile.delete(); recreate() } })
-            }
-
-            listOf("#000000" to "Black", "#0A1931" to "Midnight", "#0B3D20" to "Forest", "#8B0000" to "Crimson", "#FF4500" to "Orange", "#4B0082" to "Purple", "#008080" to "Teal", "#2F3640" to "Gray", "#FFFFFF" to "White").forEach { (hex,name) ->
-                col.addView(Button(this).apply{
-                    text="$name $hex"; try{ setBackgroundColor(Color.parseColor(hex)); setTextColor(if(hex=="#FFFFFF") Color.BLACK else Color.WHITE) }catch(_:Exception){}
-                    setOnClickListener{
-                        try{ ThemeUtil.saveBg(this@ThemeSettingsActivity, hex); Toast.makeText(this@ThemeSettingsActivity, "$name appliqué", Toast.LENGTH_SHORT).show(); finish() }
-                        catch(e:Exception){ ThemeUtil.log(this@ThemeSettingsActivity, "apply err ${e.message}"); Toast.makeText(this@ThemeSettingsActivity, e.message, Toast.LENGTH_LONG).show() }
-                    }
-                })
-            }
-            scroll.addView(col)
-            setContentView(scroll)
-        }catch(e:Exception){
-            ThemeUtil.log(this, "ThemeSettings crash ${e.stackTraceToString()}")
-            setContentView(TextView(this).apply{ text="Crash theme:\n${e.message}\n${e.stackTraceToString().take(2000)}"; setTextColor(Color.RED)})
+        val scroll = ScrollView(this)
+        val col = LinearLayout(this).apply{
+            orientation = LinearLayout.VERTICAL
+            setPadding(32,60,32,32)
+            setBackgroundColor(Color.parseColor("#121212"))
         }
+        col.addView(TextView(this).apply{ text="Choisis un thème"; setTextColor(Color.WHITE); textSize=22f; setPadding(0,0,0,30)})
+
+        val themes = listOf(
+            "#F5F5F7" to "Luncher Blanc (original)",
+            "#000000" to "Amoled Black",
+            "#1A1A2E" to "Midnight Blue",
+            "#0B3D20" to "Forest",
+            "#FFF8E1" to "Crème",
+            "#E3F2FD" to "Bleu clair",
+            "#FFEBEE" to "Rose clair",
+            "#212121" to "Dark Gray"
+        )
+
+        themes.forEach { (hex, name) ->
+            val btn = Button(this).apply{
+                text = name
+                try{
+                    setBackgroundColor(Color.parseColor(hex))
+                    setTextColor(if(ThemeUtil.isDark(Color.parseColor(hex))) Color.WHITE else Color.BLACK)
+                }catch(_:Exception){}
+                layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 160).apply{ setMargins(0,0,0,20) }
+                setOnClickListener{
+                    ThemeUtil.saveBg(this@ThemeSettingsActivity, hex)
+                    Toast.makeText(this@ThemeSettingsActivity, "$name appliqué", Toast.LENGTH_SHORT).show()
+                    finish() // onResume du Launcher va reconstruire avec la bonne couleur
+                }
+            }
+            col.addView(btn)
+        }
+        scroll.addView(col)
+        setContentView(scroll)
     }
 }
