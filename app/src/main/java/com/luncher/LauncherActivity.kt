@@ -1,7 +1,6 @@
 
 package com.luncher
 import android.content.Intent
-import android.content.Intent
 import android.os.Bundle
 import com.thibautfihey.luncher.ThemeSettingsActivity
 import android.view.View
