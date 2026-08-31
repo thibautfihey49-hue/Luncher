@@ -2,72 +2,99 @@ package com.thibautfihey.luncher
 
 import android.graphics.Color
 import android.os.Bundle
-import android.view.ViewGroup
+import android.util.Log
 import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
+import java.io.File
 
 class ThemeSettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val logFile = File(filesDir, "crash_log.txt")
+        fun log(msg:String){
+            Log.e("THEME_DEBUG", msg)
+            try{ logFile.appendText("$msg\n") }catch(_:Exception){}
+        }
+
         try {
-            val scroll = ScrollView(this)
-            val container = LinearLayout(this).apply {
+            log("onCreate start")
+            val layout = LinearLayout(this).apply {
                 orientation = LinearLayout.VERTICAL
-                setPadding(32,32,32,32)
+                setPadding(30,30,30,30)
+                setBackgroundColor(Color.BLACK)
             }
-            container.addView(TextView(this).apply {
-                text = "Themes Luncher - Appui pour appliquer"
-                textSize = 20f
-                setTextColor(Color.WHITE)
-                setPadding(0,0,0,40)
-            })
 
-            // themes en dur, pas de fichier = pas de crash
-            val themes = listOf(
-                "Amoled Black" to "#000000",
-                "Midnight Blue" to "#0A1931",
-                "Forest Green" to "#0B3D20",
-                "Crimson Red" to "#8B0000",
-                "Sunset Orange" to "#FF4500",
-                "Royal Purple" to "#4B0082",
-                "Ocean Teal" to "#008080",
-                "Slate Gray" to "#2F3640"
-            )
+            val tv = TextView(this).apply {
+                text = "DEBUG THEME - Si tu vois ça, ça crash pas ici"
+                setTextColor(Color.GREEN)
+                textSize = 18f
+            }
+            layout.addView(tv)
 
-            themes.forEach { (name, color) ->
-                val btn = Button(this).apply {
-                    text = name
-                    try { setBackgroundColor(Color.parseColor(color)) } catch(_:Exception){}
-                    setTextColor(Color.WHITE)
-                    layoutParams = LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply { setMargins(0,0,0,20) }
-                    setOnClickListener {
-                        try {
-                            // applique via prefs
-                            getSharedPreferences("luncher", MODE_PRIVATE).edit()
-                                .putString("bg", color)
-                                .putString("theme_name", name)
-                                .apply()
-                            Toast.makeText(this@ThemeSettingsActivity, "$name appliqué - relance Luncher", Toast.LENGTH_LONG).show()
-                            finish()
-                        } catch(e:Exception){
-                            Toast.makeText(this@ThemeSettingsActivity, "Err: ${e.message}", Toast.LENGTH_SHORT).show()
-                        }
+            // test chaque étape
+            try {
+                log("step1: prefs")
+                val prefs = getSharedPreferences("luncher", MODE_PRIVATE)
+                log("prefs ok: ${prefs.all}")
+
+                log("step2: creation bouton")
+                val btn = Button(this).apply { text = "Test couleur #000000" }
+                btn.setOnClickListener {
+                    try {
+                        log("click appliquer")
+                        prefs.edit().putString("bg","#000000").apply()
+                        Toast.makeText(this@ThemeSettingsActivity, "OK APPLIQUÉ", Toast.LENGTH_LONG).show()
+                        log("appliqué ok")
+                    } catch(e:Exception){
+                        val err = "CLICK ERR: ${e.message}\n${e.stackTraceToString()}"
+                        log(err)
+                        Toast.makeText(this@ThemeSettingsActivity, err.take(500), Toast.LENGTH_LONG).show()
                     }
                 }
-                container.addView(btn)
-            }
+                layout.addView(btn)
 
-            scroll.addView(container)
-            scroll.setBackgroundColor(Color.parseColor("#121212"))
-            setContentView(scroll)
+                // affiche log précédent s'il existe
+                if(logFile.exists()){
+                    layout.addView(TextView(this).apply {
+                        text = "Dernier log:\n${logFile.readText().take(2000)}"
+                        setTextColor(Color.YELLOW)
+                        setPadding(0,50,0,0)
+                    })
+                }
+
+                log("step3: setContentView")
+                setContentView(layout)
+                log("setContentView ok")
+
+            } catch(e:Exception){
+                val err = "INNER ERR: ${e.message}\n${e.stackTraceToString()}"
+                log(err)
+                layout.addView(TextView(this).apply {
+                    text = err
+                    setTextColor(Color.RED)
+                })
+                setContentView(layout)
+            }
 
         } catch(e:Exception){
-            // si même ça crash, affiche l'erreur
-            val tv = TextView(this).apply {
-                text = "Crash: ${e.message}\n${e.stackTraceToString().take(500)}"
-                setTextColor(Color.RED)
+            val err = "OUTER CRASH: ${e.message}\n${e.stackTraceToString()}"
+            Log.e("THEME_DEBUG", err)
+            try{
+                File(filesDir, "crash_log.txt").appendText(err)
+            }catch(_:Exception){}
+            // affiche quand même quelque chose pour pas fermer
+            try {
+                val tv = TextView(this).apply {
+                    text = err.take(3000)
+                    setTextColor(Color.RED)
+                    setBackgroundColor(Color.BLACK)
+                    setPadding(20,20,20,20)
+                }
+                setContentView(tv)
+                Toast.makeText(this, "CRASH LOG: $err", Toast.LENGTH_LONG).show()
+            } catch(_:Exception){
+                // dernier recours
             }
-            setContentView(tv)
         }
     }
 }

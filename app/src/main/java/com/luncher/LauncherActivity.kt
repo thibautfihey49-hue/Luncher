@@ -10,31 +10,20 @@ import com.thibautfihey.luncher.ThemeSettingsActivity
 class LauncherActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_launcher)
-
-        // LONG PRESS = THEMES (100% fiable)
         try {
+            setContentView(R.layout.activity_launcher)
             val root = findViewById<View>(android.R.id.content)
-            root.post {
-                root.setOnLongClickListener {
+            root.setOnLongClickListener {
+                try {
                     startActivity(Intent(this, ThemeSettingsActivity::class.java))
-                    true
+                } catch(e:Exception){
+                    Toast.makeText(this, "Launch err: ${e.message}\n${e.stackTraceToString().take(1000)}", Toast.LENGTH_LONG).show()
                 }
-                // aussi la clé wrench si elle existe
-                fun hook(v: View){
-                    if(v is android.view.ViewGroup){
-                        for(i in 0 until v.childCount) hook(v.getChildAt(i))
-                    }
-                    try{
-                        v.setOnLongClickListener{
-                            startActivity(Intent(this, ThemeSettingsActivity::class.java))
-                            true
-                        }
-                    }catch(_:Exception){}
-                }
-                hook(root)
-                Toast.makeText(this, "Appui long = Themes", Toast.LENGTH_SHORT).show()
+                true
             }
-        } catch(e:Exception){}
+            Toast.makeText(this, "APPUI LONG = DEBUG THEMES", Toast.LENGTH_SHORT).show()
+        } catch(e:Exception){
+            Toast.makeText(this, "Launcher err: ${e.message}", Toast.LENGTH_LONG).show()
+        }
     }
 }
