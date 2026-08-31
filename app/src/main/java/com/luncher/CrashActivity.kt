@@ -1,4 +1,0 @@
-package com.luncher; import android.content.Intent
-import android.os.Bundle; import android.widget.TextView; import androidx.appcompat.app.AppCompatActivity; class CrashActivity:AppCompatActivity(){override fun onCreate(s:Bundle?){super.onCreate(s); val err=intent.getStringExtra("error")?:"?"; val tv=TextView(this); tv.text="Luncher - erreur evitee:\n\n"+err; tv.setPadding(30,150,30,30); findViewById<android.widget.ImageButton>(R.id.btnThemes)?.setOnClickListener { startActivity(android.content.Intent(this, com.thibautfihey.luncher.ThemeSettingsActivity::class.java)) }
- setContentView(tv)
- try { window.decorView.post { try { com.thibautfihey.luncher.attachThemeButton(window.decorView.rootView); findViewById<android.view.View>(android.R.id.content)?.setOnClickListener { startActivity(Intent(this, ThemeSettingsActivity::class.java)) } } catch(e:Exception){} } } catch(e:Exception){}}}
