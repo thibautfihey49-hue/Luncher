@@ -4,6 +4,8 @@ import android.Manifest
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.content.Intent
+import com.thibautfihey.luncher.ThemeSettingsActivity
 import android.provider.ContactsContract
 import android.provider.Telephony
 import android.telephony.SmsManager
@@ -21,7 +23,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 
 class SmsAppActivity:AppCompatActivity(){
-    override fun onCreate(s:Bundle?){super.onCreate(s); setContentView(R.layout.activity_sms); findViewById<View>(R.id.tabConversations)?.setOnClickListener{switchMode("list")}; findViewById<View>(R.id.tabNew)?.setOnClickListener{switchMode("new")}; findViewById<Button>(R.id.btnSendSms)?.setOnClickListener{sendSms()}; switchMode("list")}
+    override fun onCreate(s:Bundle?){super.onCreate(s); setContentView(R.layout.activity_sms)
+ try { window.decorView.post { try { com.thibautfihey.luncher.attachThemeButton(window.decorView.rootView); findViewById<android.view.View>(android.R.id.content)?.setOnClickListener { startActivity(Intent(this, ThemeSettingsActivity::class.java)) } } catch(e:Exception){} } } catch(e:Exception){}; findViewById<View>(R.id.tabConversations)?.setOnClickListener{switchMode("list")}; findViewById<View>(R.id.tabNew)?.setOnClickListener{switchMode("new")}; findViewById<Button>(R.id.btnSendSms)?.setOnClickListener{sendSms()}; switchMode("list")}
     private fun switchMode(m:String){findViewById<View>(R.id.layoutList)?.visibility=if(m=="list") View.VISIBLE else View.GONE; findViewById<View>(R.id.layoutNew)?.visibility=if(m=="new") View.VISIBLE else View.GONE; findViewById<TextView>(R.id.tabConversations)?.setBackgroundResource(if(m=="list") R.drawable.bg_glass_purple else R.drawable.bg_glass); findViewById<TextView>(R.id.tabNew)?.setBackgroundResource(if(m=="new") R.drawable.bg_glass_purple else R.drawable.bg_glass); if(m=="list") loadConv()}
 
     fun getContactName(number:String):String{

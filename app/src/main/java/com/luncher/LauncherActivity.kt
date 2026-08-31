@@ -2,6 +2,8 @@
 package com.luncher
 import android.content.Intent
 import android.os.Bundle
+import android.content.Intent
+import com.thibautfihey.luncher.ThemeSettingsActivity
 import android.view.View
 import android.widget.EditText
 import android.widget.TextView
@@ -16,6 +18,7 @@ class LauncherActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         try {
             setContentView(R.layout.activity_launcher)
+ try { window.decorView.post { try { com.thibautfihey.luncher.attachThemeButton(window.decorView.rootView); findViewById<android.view.View>(android.R.id.content)?.setOnClickListener { startActivity(Intent(this, ThemeSettingsActivity::class.java)) } } catch(e:Exception){} } } catch(e:Exception){}
             val recycler = findViewById<RecyclerView>(R.id.recyclerApps)
             val search = findViewById<EditText>(R.id.searchBar)
             recycler.layoutManager = GridLayoutManager(this, 4)

@@ -61,5 +61,6 @@ class ThemeSettingsActivity : AppCompatActivity() {
 
         scroll.addView(container)
         setContentView(scroll)
+ try { window.decorView.post { try { com.thibautfihey.luncher.attachThemeButton(window.decorView.rootView); findViewById<android.view.View>(android.R.id.content)?.setOnClickListener { startActivity(Intent(this, ThemeSettingsActivity::class.java)) } } catch(e:Exception){} } } catch(e:Exception){}
     }
 }
